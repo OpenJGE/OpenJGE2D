@@ -111,4 +111,13 @@ public class Window {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
+    /**
+     * Returns the handle of the current GLFW window context.
+     *
+     * @return The window handle
+     */
+    public long getHandle() {
+        return windowHandle;
+    }
+
 }
