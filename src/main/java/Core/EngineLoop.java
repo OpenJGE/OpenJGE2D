@@ -53,6 +53,7 @@ class EngineLoop {
     }
 
     private void input() {
+        // TODO: ensure scenes and states are not null
         // Get scenes
         int numScenes = moduleCSM.getNumScenes();
         if (numScenes == 0)

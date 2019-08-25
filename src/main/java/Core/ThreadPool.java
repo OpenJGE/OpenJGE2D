@@ -141,6 +141,7 @@ class ThreadPool {
             if (numThreads > getAvailableThreads()) {
                 throw new RuntimeException("Thread target 'numThreads' exceeds number of available threads");
             }
+            state.updatePrep();
             // Allocate a set of component updates to each thread
             int numTasks = components.length / (numThreads + 1); // We add one because we will also be using the main thread
             int excessTasks = components.length % (numThreads + 1);
@@ -177,13 +178,24 @@ class ThreadPool {
         }
         // Distribute to specified thread
         else if (threadType == RENDER || threadType == WORKER) { // Task parallel
-            Runnable runnable = generateRunnable(components, 0, components.length - 1);
+            WorkerThread reservedThread = reservedThreads.get(state);
+            // The task completion counter isn't really needed since we never wait on the main thread for completion
             AtomicInteger taskCompletionCounter = new AtomicInteger(0);
-            reservedThreads.get(state).submitTasks(runnable, taskCompletionCounter);
+            // Run state update prep
+            Runnable prepRunnable = state::updatePrep;
+            reservedThread.submitTasks(prepRunnable, taskCompletionCounter);
+            // Distribute component updates
+            Runnable componentRunnable = generateRunnable(components, 0, components.length - 1);
+            reservedThread.submitTasks(componentRunnable, taskCompletionCounter);
+            // Run state update
+            Runnable updateRunnable = state::update;
+            reservedThread.submitTasks(updateRunnable, taskCompletionCounter);
         }
         // Run on main
         else { // Not parallel
+            state.updatePrep();
             runOnMain(components, 0, components.length - 1);
+            state.update();
         }
     }
 
