@@ -22,16 +22,19 @@ import static org.lwjgl.opengl.GL20.glAttachShader;
  */
 public class ShaderProgram {
 
+    private final String name;
     private final int programId;
     private int vertexShaderId;
     private int fragmentShaderId;
     private Map<String, Integer> uniforms;
+    private boolean bound;
 
     /**
      * Creates an empty <code>ShaderProgram</code> object. Loaded shader files can then be attached to this
      * <code>ShaderProgram</code>.
      */
-    public ShaderProgram() {
+    public ShaderProgram(String name) {
+        this.name = name;
         // Creates program object that shader objects can be attached to, returning a non-zero reference value
         // In order to correctly add shaders to the program, shader objects must be compiled, attached, and
         // program must then be linked
@@ -41,6 +44,15 @@ public class ShaderProgram {
             throw new RuntimeException("Could not create shader program");
         }
         uniforms = new HashMap<>();
+    }
+
+    /**
+     * Returns the name of the <code>ShaderProgram</code> object.
+     *
+     * @return The name of the <code>ShaderProgram</code> object
+     */
+    public String getName() {
+        return name;
     }
 
     /**
@@ -112,10 +124,20 @@ public class ShaderProgram {
     }
 
     /**
+     * Checks if the program object is bound to the current rendering state.
+     *
+     * @return True if bound to the current rendering state, false if not
+     */
+    public boolean isBound() {
+        return bound;
+    }
+
+    /**
      * Installs program object executable as a part of the current rendering state.
      */
     public void bindProgram() {
         glUseProgram(programId);
+        bound = true;
     }
 
     /**
@@ -176,6 +198,7 @@ public class ShaderProgram {
     public void unbindProgram() {
         // Empties current rendering state with invalid (undefined) program object
         glUseProgram(0);
+        bound = false;
     }
 
     /**

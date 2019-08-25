@@ -27,8 +27,9 @@ public class Texture {
      *
      * @param filePath The file location of the image that will be used to generate the texture
      * @param textureUnit The location of the generated texture (0... n), unique from other texture objects that are a
-     *                    part of the current render state. The shader sampler that corresponds with this texture must
-     *                    also point to this location
+     *                    part of the current render state. For example, a diffuse texture may be at location 0, while
+     *                    the normal texture is at location 1. The shader sampler that corresponds with this texture
+     *                    must also point to this location
      */
     public Texture(String filePath, int textureUnit) {
         this.textureUnit = textureUnit;
@@ -43,7 +44,7 @@ public class Texture {
         // changes can be made to its properties (ex. filtering, wrapping, etc.)
         textureId = glGenTextures();
         if (textureId == 0) {
-            throw new RuntimeException("Failed to generate texture object (OpenGl)");
+            throw new RuntimeException("Failed to generate texture object (OpenGL)");
         }
         glBindTexture(GL_TEXTURE_2D, textureId);
         // Set texture properties
@@ -103,7 +104,9 @@ public class Texture {
         // Bind each generated texture to the specified texture unit
         glActiveTexture(GL_TEXTURE0 + textureUnit);
         glBindTexture(GL_TEXTURE_2D, textureId);
-        // Set texture sampler uniform for each texture unit
+        // Before the generated texture can be rendered, the texture sampler uniform must be set through the
+        // ShaderProgram, such that the texture unit and sampler location are equal. However, this is out of the scope
+        // of the Texture class
     }
 
     /**
