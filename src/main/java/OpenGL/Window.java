@@ -120,4 +120,18 @@ public class Window {
         return windowHandle;
     }
 
+    /**
+     * Enables writing to the depth buffer.
+     */
+    public void enableDepthWrite() {
+        glDepthMask(true);
+    }
+
+    /**
+     * Disables writing to the depth buffer.
+     */
+    public void disableDepthWrite() {
+        glDepthMask(false);
+    }
+
 }
