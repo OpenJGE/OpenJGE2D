@@ -130,7 +130,7 @@ public class Camera {
      * @param zNear The location of the near plane along the z-axis, in world coordinates
      * @param zFar The location of the far plane along the z-axis, in world coordinates
      */
-    private void setProjectionMatrix(float width, float height, float zNear, float zFar) {
+    public void setProjectionMatrix(float width, float height, float zNear, float zFar) {
         projectionMatrix.identity();
         // Symmetric orthographic projection matrix is used so that the point (0,0) in virtual space is constant
         // throughout various window dimensions
