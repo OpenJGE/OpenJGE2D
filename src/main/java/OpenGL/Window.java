@@ -23,6 +23,7 @@ public class Window {
     private String windowTitle;
     private int width;
     private int height;
+    private boolean isResized;
 
     /**
      * Creates a new GLFW Window. This includes all the initialization required for GLFW to function on the current
@@ -31,17 +32,19 @@ public class Window {
      * @param windowTitle The title displayed in the created window's title bar
      * @param width The width of the created window in pixels
      * @param height The height of the created window in pixels
+     * @param winType The type of window to be created - 0 if windowed (default), 1 if fullscreen, 2 if borderless
      */
-    public Window(String windowTitle, int width, int height) {
+    public Window(String windowTitle, int width, int height, int winType) {
         this.windowTitle = windowTitle;
         this.width = width;
         this.height = height;
+        isResized = true;
         // Create the window
-        init();
+        init(winType);
     }
 
     // This method needs to be private to prevent the logical problem of having two windows under one window object
-    private void init() {
+    private void init(int winType) {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set();
@@ -58,7 +61,21 @@ public class Window {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the windowHandle will be resizable
 
         // Create windowHandle
-        windowHandle = glfwCreateWindow(width, height, windowTitle, NULL, NULL);
+        if (winType == 1) {
+            windowHandle = glfwCreateWindow(width, height, windowTitle, glfwGetPrimaryMonitor(), NULL);
+        }
+        else if (winType == 2) {
+            long monitor = glfwGetPrimaryMonitor();
+            GLFWVidMode vidMode = glfwGetVideoMode(monitor);
+            glfwWindowHint(GLFW_RED_BITS, vidMode.redBits());
+            glfwWindowHint(GLFW_GREEN_BITS, vidMode.greenBits());
+            glfwWindowHint(GLFW_BLUE_BITS, vidMode.blueBits());
+            glfwWindowHint(GLFW_REFRESH_RATE, vidMode.refreshRate());
+            windowHandle = glfwCreateWindow(vidMode.width(), vidMode.height(), windowTitle, monitor, NULL);
+        }
+        else {
+            windowHandle = glfwCreateWindow(width, height, windowTitle, NULL, NULL);
+        }
         if (windowHandle == NULL) {
             throw new RuntimeException("Failed to create the GLFW windowHandle");
         }
@@ -70,6 +87,7 @@ public class Window {
             public void invoke(long l, int i, int i1) {
                 width = i;
                 height = i1;
+                isResized = true;
             }
         };
         glfwSetFramebufferSizeCallback(windowHandle, screenCallback);
@@ -121,6 +139,43 @@ public class Window {
     }
 
     /**
+     * Returns the width of the window.
+     *
+     * @return The width of the window, in pixels
+     */
+    public int getWidth() {
+        return width;
+    }
+
+    /**
+     * Returns the height of the window.
+     *
+     * @return The height of the window, in pixels
+     */
+    public int getHeight() {
+        return height;
+    }
+
+    /**
+     * Returns a boolean representing whether or not the window framebuffer has been resized. Will initially return
+     * true upon window creation to allow for projection matrices to be set up in the renderer.
+     *
+     * @return A boolean representing whether or not the window framebuffer has been resized
+     */
+    public boolean isResized() {
+        return isResized;
+    }
+
+    /**
+     * Sets the resized state of the window, which tracks whether or not the window framebuffer has been resized.
+     *
+     * @param isResized A boolean representing whether or not the window framebuffer has been resized
+     */
+    public void setResized(boolean isResized) {
+        this.isResized = isResized;
+    }
+
+    /**
      * Enables writing to the depth buffer.
      */
     public void enableDepthWrite() {
@@ -132,6 +187,20 @@ public class Window {
      */
     public void disableDepthWrite() {
         glDepthMask(false);
+    }
+
+    /**
+     * Swaps the back buffer with the current buffer, displaying a new frame.
+     */
+    public void swapBuffers() {
+        glfwSwapBuffers(windowHandle);
+    }
+
+    /**
+     * Destroys the window.
+     */
+    public void destroyWindow() {
+        glfwDestroyWindow(windowHandle);
     }
 
 }

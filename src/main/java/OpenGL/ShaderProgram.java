@@ -23,6 +23,9 @@ import static org.lwjgl.opengl.GL20.glAttachShader;
 public class ShaderProgram {
 
     private final String name;
+    private final String projMatName;
+    private final String viewMatName;
+    private final String modelMatName;
     private final int programId;
     private int vertexShaderId;
     private int fragmentShaderId;
@@ -32,9 +35,17 @@ public class ShaderProgram {
     /**
      * Creates an empty <code>ShaderProgram</code> object. Loaded shader files can then be attached to this
      * <code>ShaderProgram</code>.
+     *
+     * @param name The name of the <code>ShaderProgram</code> object being created
+     * @param projMatName The name of the projection matrix uniform variable found in the vertex shader code file
+     * @param viewMatName The name of the view matrix uniform variable found in the vertex shader code file
+     * @param modelMatName The name of the model matrix uniform variable found in the vertex shader code file
      */
-    public ShaderProgram(String name) {
+    public ShaderProgram(String name, String projMatName, String viewMatName, String modelMatName) {
         this.name = name;
+        this.projMatName = projMatName;
+        this.viewMatName = viewMatName;
+        this.modelMatName = modelMatName;
         // Creates program object that shader objects can be attached to, returning a non-zero reference value
         // In order to correctly add shaders to the program, shader objects must be compiled, attached, and
         // program must then be linked
@@ -53,6 +64,33 @@ public class ShaderProgram {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Returns the name of the projection matrix uniform variable.
+     *
+     * @return The name of the projection matrix uniform variable
+     */
+    public String getProjMatName() {
+        return projMatName;
+    }
+
+    /**
+     * Returns the name of the view matrix uniform variable.
+     *
+     * @return The name of the view matrix uniform variable
+     */
+    public String getViewMatName() {
+        return viewMatName;
+    }
+
+    /**
+     * Returns the name of the model matrix uniform variable.
+     *
+     * @return The name of the model matrix uniform variable
+     */
+    public String getModelMatName() {
+        return modelMatName;
     }
 
     /**

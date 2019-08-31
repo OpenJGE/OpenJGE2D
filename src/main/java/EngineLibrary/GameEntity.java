@@ -1,4 +1,4 @@
 package EngineLibrary;
 
-public class GameEntity {
+public class GameEntity { // setEntityOrigin
 }
