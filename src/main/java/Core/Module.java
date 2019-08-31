@@ -41,7 +41,7 @@ public class Module implements IModule {
 
     public Module(int targetUPS) {
         if (instantiated) {
-            throw new RuntimeException("The Core Module has already been created");
+            throw new RuntimeException("The Core module has already been created");
         }
         else {
             instantiated = true;
@@ -145,6 +145,15 @@ public class Module implements IModule {
      */
     public void popScene() {
         moduleCSM.popScene();
+    }
+
+    /**
+     * Returns the number of <code>IScene</code> objects currently held in the scene stack.
+     *
+     * @return The number of <code>IScene</code> objects currently held in the scene stack
+     */
+    public int getNumScenes() {
+        return moduleCSM.getNumScenes();
     }
 
     /**
