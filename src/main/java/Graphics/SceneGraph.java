@@ -50,7 +50,7 @@ public class SceneGraph {
         RenderState renderState;
         // If state has not previously been created, create a new state object
         if (typeNode.getFlag()) {
-            renderState = new RenderState(module.getWindow(), rootNode.getObject(), shaderProgram, componentType);
+            renderState = new RenderState(module, rootNode.getObject(), shaderProgram, componentType);
             SceneNode<RenderState> stateNode = new SceneNode<>(shaderProgram.getName() + "-" + componentType.name());
             stateNode.attachObject(renderState);
             typeNode.addChild(stateNode);

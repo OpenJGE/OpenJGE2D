@@ -13,14 +13,14 @@ import static Graphics.Module.ComponentType.TRANSLUCENT;
 
 public class RenderState implements IState {
 
-    private Window window;
+    private Graphics.Module graphicsModule;
     private IScene parentScene;
     private ShaderProgram shaderProgram;
     private ComponentType componentType;
     private ArrayList<IComponent> renderComponents;
 
-    RenderState(Window window, IScene parentScene, ShaderProgram shaderProgram, ComponentType componentType) {
-        this.window = window;
+    RenderState(Graphics.Module graphicsModule, IScene parentScene, ShaderProgram shaderProgram, ComponentType componentType) {
+        this.graphicsModule = graphicsModule;
         this.parentScene = parentScene;
         this.shaderProgram = shaderProgram;
         this.componentType = componentType;
@@ -51,18 +51,12 @@ public class RenderState implements IState {
 
     @Override
     public void updatePrep() {
-        shaderProgram.bindProgram();
-        if (componentType == TRANSLUCENT) {
-            window.disableDepthWrite();
-        }
+        graphicsModule.renderPrep(parentScene, shaderProgram, componentType);
     }
 
     @Override
     public void update() {
-        if (componentType == TRANSLUCENT) {
-            window.enableDepthWrite();
-        }
-        shaderProgram.unbindProgram();
+        graphicsModule.renderState(parentScene, componentType);
     }
 
     @Override

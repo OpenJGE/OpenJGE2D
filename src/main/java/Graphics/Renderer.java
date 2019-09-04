@@ -1,16 +1,19 @@
 package Graphics;
 
 import EngineLibrary.IScene;
+import Graphics.Module.ComponentType;
 import OpenGL.*;
 import org.joml.Matrix4f;
 
+import static Graphics.Module.ComponentType.TRANSLUCENT;
 import static org.lwjgl.opengl.GL11.*;
 
-public class Renderer {
+class Renderer {
 
     private Window window;
     private Camera camera;
 
+    private boolean initialized = false;
     private IScene previousScene;
     private int sceneCounter;
     private int stateCounter;
@@ -24,7 +27,13 @@ public class Renderer {
         this.camera = camera;
     }
 
-    void renderPrep(IScene currentScene, ShaderProgram shaderProgram) {
+    void renderPrep(IScene currentScene, ShaderProgram shaderProgram, ComponentType componentType, int numScenes) {
+        if (!initialized) {
+            window.attachContext();
+            window.createCapabilities();
+            initialized = true;
+        }
+
         // Resize the view so that it fits the window (size of the viewport matches the size of the window, centering
         // the view and filling the screen with the entire frustum)
         // NOTE: The viewport should always match the size of the window (and is measured in pixels), while the view
@@ -59,7 +68,7 @@ public class Renderer {
             // We add 0.1 to the far plane because we pull the camera back 0.1 so that the far plane is at 0
             camera.setProjectionMatrix(virtualWidth, virtualHeight, 0.1f, virtualHeight + 0.1f);
         }
-        if (currentScene != previousScene) {
+        if (currentScene != previousScene || numScenes == 1) {
             sceneCounter++;
             stateCounter = 0;
             // Set up the renderer for rendering a new scene
@@ -68,12 +77,16 @@ public class Renderer {
         previousScene = currentScene;
         currentShader = shaderProgram;
 
-        // Set up the renderer for rendering a new state (setting shader uniforms)
+        // Set up the renderer for rendering a new state (setting shader uniforms and window settings)
         projectionMatrix = camera.getProjectionMatrix();
         Matrix4f viewMatrix = camera.getViewMatrix();
+        shaderProgram.bindProgram();
         // Note that the uniforms here must be created before they can be set. This is out of the scope of the renderer
         shaderProgram.setUniform(shaderProgram.getProjMatName(), projectionMatrix);
         shaderProgram.setUniform(shaderProgram.getViewMatName(), viewMatrix);
+        if (componentType == TRANSLUCENT) {
+            window.disableDepthWrite();
+        }
     }
 
     void renderModel(IRenderComponent renderComponent, Mesh mesh, Texture[] textures) {
@@ -103,7 +116,12 @@ public class Renderer {
         mesh.unbind();
     }
 
-    void renderState(int numScenes, int numStatesInScene) {
+    void renderState(int numScenes, int numStatesInScene, ComponentType componentType) {
+        if (componentType == TRANSLUCENT) {
+            window.enableDepthWrite();
+        }
+        currentShader.unbindProgram();
+
         stateCounter++;
         // Ensure that we are on the last scene AND the last state before performing final rendering operations
         if (sceneCounter == numScenes && stateCounter == numStatesInScene) {
