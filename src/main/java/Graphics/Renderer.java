@@ -68,9 +68,8 @@ class Renderer {
             // We add 0.1 to the far plane because we pull the camera back 0.1 so that the far plane is at 0
             camera.setProjectionMatrix(virtualWidth, virtualHeight, 0.1f, virtualHeight + 0.1f);
         }
-        if (currentScene != previousScene || numScenes == 1) {
+        if (currentScene != previousScene || (numScenes == 1 && stateCounter == 0)) {
             sceneCounter++;
-            stateCounter = 0;
             // Set up the renderer for rendering a new scene
             glClear(GL_DEPTH_BUFFER_BIT);
         }
@@ -94,9 +93,7 @@ class Renderer {
         Matrix4f modelMatrix = new Matrix4f();
         float xPos = renderComponent.getXPos();
         float yPos = renderComponent.getYPos();
-        // Set z coordinate to be equal to y coordinate
-        float virtualHeight = standardRatio * virtualWidth;
-        float zPos = -(virtualHeight / 2 + yPos);
+        float zPos = convert2DDepth(yPos);
         modelMatrix.identity()
                 .translate(xPos, yPos, zPos)
                 .rotateZ((float) Math.toRadians(renderComponent.getRotation()))
@@ -126,6 +123,7 @@ class Renderer {
         // Ensure that we are on the last scene AND the last state before performing final rendering operations
         if (sceneCounter == numScenes && stateCounter == numStatesInScene) {
             sceneCounter = 0;
+            stateCounter = 0;
 
             // Since the framebuffer is only swapped when the last scene is finished rendering, we can defer updating
             // the projection and view matrices until the final scene is rendered to save on computation <- no!
@@ -136,6 +134,12 @@ class Renderer {
 
     void setVirtualWidth(float virtualWidth) {
         this.virtualWidth = virtualWidth;
+    }
+
+    float convert2DDepth(float yPos) {
+        // Set z coordinate to be equal to y coordinate
+        float virtualHeight = standardRatio * virtualWidth;
+        return -(virtualHeight / 2 + yPos);
     }
 
 }

@@ -51,9 +51,12 @@ void main()
 vec3 calcPointLight(vec3 fragPos, vec3 fragNormal, vec3 fragColour, PointLight light)
 {
     // Convert 3D vectors to 2D vectors
-    vec2 position = fragPos.xy;
+    vec2 position = fragPos.xz;
     vec2 normal = normalize(fragNormal.xz);
-    vec2 lightPos = light.position.xy;
+    vec2 lightPos = light.position.xz;
+    // Calculate whether or not the light is behind the fragment; -1 if it is, +1 if it isn't
+    float zDistance = light.position.z - fragPos.z;
+    float lightDepth = max(min(1, zDistance), -1);
     // Ambient
     vec3 ambient = light.ambient * fragColour;
     // Diffuse

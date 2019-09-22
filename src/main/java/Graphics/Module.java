@@ -102,6 +102,7 @@ public class Module implements IModule {
         spriteShader.createVertexShader(vsCode);
         spriteShader.createFragmentShader(fsCode);
         spriteShader.linkProgram();
+        spriteShader.bindProgram();
         spriteShader.createUniform(spriteShader.getProjMatName());
         spriteShader.createUniform(spriteShader.getViewMatName());
         spriteShader.createUniform(spriteShader.getModelMatName());
@@ -112,6 +113,15 @@ public class Module implements IModule {
         spriteShader.createUniform("scene.nPointLights");
         spriteShader.setUniform("diffuseMap", 0); // These are the default sampler locations that must be adhered to by all textures that use this shader
         spriteShader.setUniform("normalMap", 1);
+        for (int i = 0; i < pointLights.length; i++) {
+            spriteShader.createUniform("pointLights[" + i + "].position");
+            spriteShader.createUniform("pointLights[" + i + "].ambient");
+            spriteShader.createUniform("pointLights[" + i + "].diffuse");
+            spriteShader.createUniform("pointLights[" + i + "].constant");
+            spriteShader.createUniform("pointLights[" + i + "].linear");
+            spriteShader.createUniform("pointLights[" + i + "].quadratic");
+        }
+        spriteShader.unbindProgram();
 
         pointLightShader = new ShaderProgram("Point Light Shader", "projectionMatrix", "viewMatrix", "modelMatrix");
         vsCode = codeReader.loadCodeFile("/Shaders/point_light.vs");
@@ -119,11 +129,13 @@ public class Module implements IModule {
         pointLightShader.createVertexShader(vsCode);
         pointLightShader.createFragmentShader(fsCode);
         pointLightShader.linkProgram();
+        pointLightShader.bindProgram();
         pointLightShader.createUniform(pointLightShader.getProjMatName());
         pointLightShader.createUniform(pointLightShader.getViewMatName());
         pointLightShader.createUniform(pointLightShader.getModelMatName());
         pointLightShader.createUniform("diffuseMap");
         pointLightShader.setUniform("diffuseMap", 0);
+        pointLightShader.unbindProgram();
 
         // Register with the core
     }
@@ -247,10 +259,12 @@ public class Module implements IModule {
         PointLightStruct pointLight = new PointLightStruct(renderComponent);
         pointLight.ambient = new Vector3f(1.0f, 1.0f, 1.0f);
         pointLight.diffuse = new Vector3f(1.0f, 1.0f, 1.0f);
-        pointLight.linear = 0.09f;
-        pointLight.quadratic = 0.032f;
+        pointLight.linear = 0.007f;
+        pointLight.quadratic = 0.0002f;
         pointLights[nPointLights - 1] = pointLight;
     }
+
+    // TODO: add method to set point light colour and brightness
 
     /**
      * Adds a <code>IRenderComponent</code> object that uses a previously added custom shader to the specified scene.
@@ -300,7 +314,19 @@ public class Module implements IModule {
             spriteShader.setUniform("scene.brightness", ambientLight.w);
             spriteShader.setUniform("scene.nPointLights", nPointLights);
 
-            // TODO: update the entire array of point lights in the shader
+            for (int i = 0; i < nPointLights; i++) {
+                PointLightStruct pointLight = pointLights[i];
+                float x = pointLight.renderComponent.getXPos();
+                float y = pointLight.renderComponent.getYPos();
+                float z = renderer.convert2DDepth(y);
+                Vector3f position = new Vector3f(x, y, z);
+                spriteShader.setUniform("pointLights[" + i + "].position", position);
+                spriteShader.setUniform("pointLights[" + i + "].ambient", pointLight.ambient);
+                spriteShader.setUniform("pointLights[" + i + "].diffuse", pointLight.diffuse);
+                spriteShader.setUniform("pointLights[" + i + "].constant", 1.0f);
+                spriteShader.setUniform("pointLights[" + i + "].linear", pointLight.linear);
+                spriteShader.setUniform("pointLights[" + i + "].quadratic", pointLight.quadratic);
+            }
         }
     }
 
@@ -332,7 +358,7 @@ public class Module implements IModule {
         window.destroyWindow();
     }
 
-    class PointLightStruct {
+    static class PointLightStruct {
         final IRenderComponent renderComponent;
         Vector3f ambient;
         Vector3f diffuse;
