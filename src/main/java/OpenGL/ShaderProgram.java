@@ -1,6 +1,7 @@
 package OpenGL;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
@@ -189,7 +190,7 @@ public class ShaderProgram {
         // Find uniform location in shader
         int uniformLocation = glGetUniformLocation(programId, uniformName);
         if (uniformLocation == -1) {
-            throw new RuntimeException("Could not find uniform:" + uniformName);
+            throw new RuntimeException("Could not find uniform: " + uniformName);
         }
         uniforms.put(uniformName, uniformLocation);
     }
@@ -219,6 +220,30 @@ public class ShaderProgram {
     }
 
     /**
+     * Sets the value of a vec3 uniform variable in the <code>ShaderProgram</code>. The shader uniform must have
+     * already been located through the <code>createUniform</code> method before it can be set.
+     *
+     * @param uniformName The name of the uniform whose value is being set
+     * @param value The value that the uniform is being set to
+     */
+    public void setUniform(String uniformName, Vector3f value) {
+        // Memory management is done automatically using the MemoryStack class
+        // this is because the size of the buffer is small (16 floats) and will
+        // not be used outside of the method
+
+        // Use try-with-resources to access memory stack in order for the stack to be
+        // popped and float buffer freed automatically once shader uniform is set
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            // Allocate a float buffer (array can also be used)
+            FloatBuffer floatBuffer = memoryStack.mallocFloat(3);
+            // Put vector into float buffer
+            value.get(floatBuffer);
+            // Modify shader uniform value
+            glUniform3fv(uniforms.get(uniformName), floatBuffer);
+        }
+    }
+
+    /**
      * Sets the value of an int uniform variable in the <code>ShaderProgram</code>. The shader uniform must have
      * already been located through the <code>createUniform</code> method before it can be set.
      *
@@ -228,6 +253,18 @@ public class ShaderProgram {
     public void setUniform(String uniformName, int value) {
         // Modify shader uniform value
         glUniform1i(uniforms.get(uniformName), value);
+    }
+
+    /**
+     * Sets the value of a float uniform variable in the <code>ShaderProgram</code>. The shader uniform must have
+     * already been located through the <code>createUniform</code> method before it can be set.
+     *
+     * @param uniformName The name of the uniform whose value is being set
+     * @param value The value that the uniform is being set to
+     */
+    public void setUniform(String uniformName, float value) {
+        // Modify shader uniform value
+        glUniform1f(uniforms.get(uniformName), value);
     }
 
     /**

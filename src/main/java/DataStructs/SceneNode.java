@@ -33,6 +33,7 @@ public class SceneNode<T> {
     private SceneNode(SceneNode parent, String name) {
         this.name = name;
         this.parentNode = parent;
+        childNodes = new ArrayList<>();
     }
 
     /**

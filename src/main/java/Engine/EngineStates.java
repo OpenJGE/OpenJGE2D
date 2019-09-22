@@ -12,6 +12,8 @@ public class EngineStates {
     WindowType windowType = WINDOWED;
     int windowedWidth = 300;
     int windowedHeight = 300;
+    String textureLocation;
+    int maxPointLights = 10;
 
     /**
      * Returns the window title.
@@ -47,6 +49,15 @@ public class EngineStates {
      */
     public int getWindowedHeight() {
         return windowedHeight;
+    }
+
+    /**
+     * Returns the maximum number of point lights across all scenes.
+     *
+     * @return The maximum number of point lights across all scenes
+     */
+    public int getMaxLights() {
+        return maxPointLights;
     }
 
 }
