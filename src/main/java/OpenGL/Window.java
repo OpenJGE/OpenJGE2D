@@ -114,7 +114,7 @@ public class Window {
         // Make the OpenGL context current
         glfwMakeContextCurrent(windowHandle);
         // Enable v-sync
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
 
         // Make the windowHandle visible
         glfwShowWindow(windowHandle);
@@ -127,6 +127,18 @@ public class Window {
         // Calibrate depth testing and blending functions
         glDepthFunc(GL_LESS);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    public void detachContext() {
+        glfwMakeContextCurrent(NULL);
+    }
+
+    public void attachContext() {
+        glfwMakeContextCurrent(windowHandle);
+    }
+
+    public void createCapabilities() {
+        GL.createCapabilities();
     }
 
     /**

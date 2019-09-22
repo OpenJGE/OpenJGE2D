@@ -26,11 +26,11 @@ class ModuleCSM {
         sceneStack = new ArrayList<>();
         phaseUpdateMap = new HashMap<>();
 
-        IState[][] inputStates = new IState[1][1]; // One scene, one state
+        IState[][] inputStates = new IState[0][0]; // Zero scenes, zero states
         phaseUpdateMap.put(INPUT, inputStates);
-        IState[][] updateStates = new IState[1][1];
+        IState[][] updateStates = new IState[0][0];
         phaseUpdateMap.put(UPDATE, updateStates);
-        IState[][] renderStates = new IState[1][1];
+        IState[][] renderStates = new IState[0][0];
         phaseUpdateMap.put(RENDER, renderStates);
     }
 
@@ -134,7 +134,7 @@ class ModuleCSM {
      * into a runnable and stored in an array representing its enclosing state. All "states" in the scene registered
      * under the respective phase are stored in order of registration (oldest "states" being at the head of the array).
      *
-     * @param sceneIndex The index of the desired scene on the scene stack. Stack is ordered in LIFO
+     * @param sceneIndex The index of the desired scene on the scene stack, starting at 0. Stack is ordered in LIFO
      * @param phase The phase to target for state updates (INPUT, UPDATE, RENDER)
      * @return A 2D array holding arrays of component updates for each state in the specified scene registered under
      * the specified phase

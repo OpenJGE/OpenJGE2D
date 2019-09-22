@@ -12,7 +12,7 @@ class EngineLoop {
     private ModuleCSM moduleCSM;
     private ThreadPool threadPool;
 
-    private int targetUPS;
+    private double targetUPS;
     private Boolean running = true;
 
     EngineLoop(EventQueue eventQueue, ModuleCSM moduleCSM, ThreadPool threadPool, int targetUPS) {
@@ -53,7 +53,6 @@ class EngineLoop {
     }
 
     private void input() {
-        // TODO: ensure scenes and states are not null
         // Get scenes
         int numScenes = moduleCSM.getNumScenes();
         if (numScenes == 0)
@@ -61,7 +60,7 @@ class EngineLoop {
         // Update each scene
         for (int i = 0; i < numScenes; i++) {
             IState[] statesInScene = moduleCSM.getStates(i, INPUT);
-            if (i == 0) {
+            if (i == 0 && statesInScene.length > 0) {
                 // Get the components held in the initial state, the updates of which are to run concurrently with event
                 // tasks
                 IState initialState = statesInScene[0];

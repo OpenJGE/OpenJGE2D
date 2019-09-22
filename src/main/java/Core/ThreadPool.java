@@ -7,6 +7,7 @@ import EngineLibrary.IState;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -97,6 +98,9 @@ class ThreadPool {
         if (numThreads > getAvailableThreads()) {
             throw new RuntimeException("Thread target 'nThreads' exceeds number of available threads");
         }
+        if (tasks.length == 0) {
+            return;
+        }
         // Allocate a set of component updates to each thread
         int numTasks = tasks.length / (numThreads); // We add one because we will also be using the main thread
         int excessTasks = tasks.length % (numThreads);
@@ -136,6 +140,9 @@ class ThreadPool {
         ThreadType threadType = stateThreadType.get(state);
         if (threadType == null)
             throw new RuntimeException("State " + state + " has not been registered with the threadpool");
+        if (components.length == 0) {
+            return;
+        }
         // Distribute to all available threads
         if (threadType == ALL) { // Data parallel
             if (numThreads > getAvailableThreads()) {
@@ -181,15 +188,17 @@ class ThreadPool {
             WorkerThread reservedThread = reservedThreads.get(state);
             // The task completion counter isn't really needed since we never wait on the main thread for completion
             AtomicInteger taskCompletionCounter = new AtomicInteger(0);
-            // Run state update prep
+            // Package each runnable up into a single task runnable
             Runnable prepRunnable = state::updatePrep;
-            reservedThread.submitTasks(prepRunnable, taskCompletionCounter);
-            // Distribute component updates
             Runnable componentRunnable = generateRunnable(components, 0, components.length - 1);
-            reservedThread.submitTasks(componentRunnable, taskCompletionCounter);
-            // Run state update
             Runnable updateRunnable = state::update;
-            reservedThread.submitTasks(updateRunnable, taskCompletionCounter);
+            Runnable taskRunnable = () -> {
+                prepRunnable.run();
+                componentRunnable.run();
+                updateRunnable.run();
+            };
+            // Run the task runnable
+            reservedThread.submitTasks(taskRunnable, taskCompletionCounter);
         }
         // Run on main
         else { // Not parallel
@@ -237,7 +246,7 @@ class ThreadPool {
         private AtomicInteger numTasks;
         private AtomicInteger queueHead;
         private AtomicInteger queueTail;
-        private Map<Runnable, AtomicInteger> batchCounterMap;
+        private ConcurrentHashMap<Runnable, AtomicInteger> batchCounterMap;
 
         private Runnable[] taskQueue;
 
@@ -249,8 +258,8 @@ class ThreadPool {
             queueHead = new AtomicInteger(0);
             queueTail = new AtomicInteger(0);
 
-            taskQueue = new Runnable[3]; // To start, we allocate one element for each phase
-            batchCounterMap = new HashMap<>();
+            taskQueue = new Runnable[10]; // To start, we allocate one element for each phase
+            batchCounterMap = new ConcurrentHashMap<>();
         }
 
         boolean isActive() {
@@ -258,8 +267,29 @@ class ThreadPool {
         }
 
         void submitTasks(Runnable task, AtomicInteger batchCompletionCounter) {
+            // Check if the queue is full, or if it is about to be full (there is a chance that the queue head might be
+            // advanced after the if clause meaning that although the queue is read as being "full", there is still an
+            // empty spot, but this won't cause any problems)
+            if (queueTail.get() == queueHead.get() && numTasks.get() > 0) { // This condition will never change to true during task execution
+                // Instead of just dropping the task entirely, we have the main thread wait for a spot to free up in the
+                // queue
+                System.out.println("Waiting");
+                while (queueTail.get() == queueHead.get() && numTasks.get() > 0) {}
+                System.out.println("Finished Waiting");
+
+            }
             batchCompletionCounter.incrementAndGet();
-            batchCounterMap.put(task, batchCompletionCounter);
+            batchCounterMap.putIfAbsent(task, batchCompletionCounter);
+            // Add task to queue. This MUST be done before incrementing numTasks to prevent the thread from grabbing a
+            // null runnable value from the queue head when the first task is submitted to the queue
+            taskQueue[queueTail.get()] = task;
+            // The task queue length does not have to be atomic because it is only ever changed in this method, which is
+            // only ever accessed by a single thread at a time
+            // We also don't have to worry about the queue head position changing partway through this method's
+            // execution because the thread is guaranteed to wait, as seen in the run() method
+            // And the queue tail position also only changes in this method so it'll never overwrite the queue head
+            int newTail = (queueTail.get() + 1) % taskQueue.length;
+            queueTail.getAndSet(newTail);
             // Note: We MUST increment the number of tasks prior to setting the thread as active. To see why, consider
             // the case of there being one task left in the queue while a new task is submitted to the queue. If we're
             // unlucky, the ordering may go like this: submitTasks is called and the thread is set as active. Then,
@@ -271,30 +301,6 @@ class ThreadPool {
             // on the main thread, which is also the only thread that the getAvailableThreads() method is called on.
             // This means that we will never read the thread activity value halfway through task submission
             active.getAndSet(true);
-            // Add task to queue
-            taskQueue[queueTail.get()] = task;
-            // The task queue length does not have to be atomic because it is only ever changed in this method, which is
-            // only ever accessed by a single thread at a time
-            // We also don't have to worry about the queue head position changing partway through this method's
-            // execution because the thread is guaranteed to wait, as seen in the run() method
-            // And the queue tail position also only changes in this method so it'll never overwrite the queue head
-            int newTail = (queueTail.get() + 1) % taskQueue.length;
-            queueTail.getAndSet(newTail);
-            if (queueTail.get() == queueHead.get()) { // This condition will never change to true during task execution
-                // TODO: Replace with logger
-                System.out.println("The task queue belonging to thread '" + name + "' is full");
-                System.out.println("New task queue length of thread '" + name + "': " + taskQueue.length * 2);
-                // Copy the head to end of array portion, then the start of array to tail portion
-                Runnable[] bufferArray = new Runnable[taskQueue.length * 2];
-                int length = taskQueue.length - queueHead.get();
-                System.arraycopy(taskQueue, queueHead.get(), bufferArray, 0, length);
-                System.arraycopy(taskQueue, 0, bufferArray, length, queueTail.get());
-                taskQueue = new Runnable[taskQueue.length * 2];
-                queueHead.getAndSet(0);
-                int tail = queueTail.get();
-                queueTail.getAndSet(length + tail);
-                System.arraycopy(bufferArray, 0, taskQueue, 0, queueTail.get());
-            }
         }
 
         void shutDown() {
@@ -308,18 +314,14 @@ class ThreadPool {
             // copied over
             boolean scan = true;
             while (running.get()) {
-                // Scan for tasks
-                if (queueTail.get() == queueHead.get()) {
-                    scan = false;
-                }
-                else {
-                    scan = true;
-                }
-                if (scan && numTasks.get() > 0) {
+                if (numTasks.get() > 0) {
                     // See note in submitTasks method for why activity is set to true here
                     active.getAndSet(true);
                     // Execute tasks
                     Runnable runnable = taskQueue[queueHead.get()];
+                    if (runnable == null) {
+                        throw new RuntimeException("Error: queue head [" + queueHead.get() + "] points to null");
+                    }
                     runnable.run();
                     numTasks.decrementAndGet();
                     // Once again, it is safe to get task queue length because this block never executes while the task
