@@ -88,9 +88,12 @@ class EventQueue {
     }
 
     Runnable[] getEventReceivers() {
-        Runnable[] runnables = new Runnable[eventQueue.length];
+        if (eventQueueTail == 0) {
+            return new Runnable[0];
+        }
+        Runnable[] runnables = new Runnable[eventQueueTail + 1];
         // Iterate through each event in the queue
-        for (int i = 0; i < eventQueue.length; i++) {
+        for (int i = 0; i < eventQueueTail; i++) {
             Event event = eventQueue[i];
             Enum eventEnum = event.eventEnum;
             // Get all EventReceivers registered under this event
