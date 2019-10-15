@@ -106,10 +106,6 @@ class EngineLoop {
     }
 
     private void render() {
-        // Kick off event handling
-        Runnable[] eventTasks = eventQueue.getEventReceivers();
-        int numThreads = threadPool.getAvailableThreads();
-        threadPool.executeEventTasks(eventTasks, numThreads);
         // Get scenes
         int numScenes = moduleCSM.getNumScenes();
         if (numScenes == 0)
@@ -117,16 +113,51 @@ class EngineLoop {
         // Update each scene
         for (int i = 0; i < numScenes; i++) {
             IState[] statesInScene = moduleCSM.getStates(i, RENDER);
-            for (int y = 0; y < statesInScene.length; y++) {
-                IState state = statesInScene[y];
-                threadPool.executeUpdateTasks(state, state.getComponents(), 1);
+            if (i == 0 && statesInScene.length > 0) {
+                // Get the components held in the initial state, the updates of which are to run concurrently with event
+                // tasks
+                IState initialState = statesInScene[0];
+                IComponent[] components = initialState.getComponents();
+                // Get events from the message queue
+                Runnable[] eventTasks = eventQueue.getEventReceivers();
+                // Allocate and distribute to threads
+                int numThreads = threadPool.getAvailableThreads();
+                int eventThreads = calcAlloc(eventTasks.length, components.length, numThreads);
+                int initUpdateThreads = numThreads - eventThreads;
+                threadPool.executeEventTasks(eventTasks, eventThreads);
+                threadPool.executeUpdateTasks(initialState, components, initUpdateThreads);
+
+                // Update remaining states in first scene
+                for (int y = 1; y < statesInScene.length; y++) {
+                    IState state = statesInScene[y];
+                    threadPool.executeUpdateTasks(state, state.getComponents(), threadPool.getAvailableThreads());
+                }
+            }
+            else {
+                // Run state updates like normal
+                for (int y = 0; y < statesInScene.length; y++) {
+                    IState state = statesInScene[y];
+                    threadPool.executeUpdateTasks(state, state.getComponents(), threadPool.getAvailableThreads());
+                }
             }
         }
     }
 
     private int calcAlloc(int set1, int set2, int totalThreads) {
-        int set1Threads = totalThreads / ((set1 / set2) + 1);
-        return set1Threads;
+        if (set1 == 0) {
+            return Math.min(set2, totalThreads);
+        }
+
+        if (set2/set1 == -1) {
+            throw new RuntimeException("Error: negative argument provided");
+        }
+
+        if (totalThreads > (set1 + set2)) {
+            totalThreads = set1 + set2;
+        }
+
+        int set1Threads = totalThreads / ((set2 / set1) + 1);
+        return Math.min(Math.max(1, set1Threads), totalThreads - 1);
     }
 
 }

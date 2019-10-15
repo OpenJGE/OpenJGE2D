@@ -87,7 +87,7 @@ class ThreadPool {
     int getAvailableThreads() {
         int availableThreads = 0;
         for (int i = 0; i < threads.length; i++) {
-            if (threads[i].isActive()) {
+            if (!threads[i].isActive()) {
                 availableThreads++;
             }
         }
