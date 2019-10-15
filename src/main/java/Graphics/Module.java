@@ -243,6 +243,10 @@ public class Module implements IModule {
 
     // TODO: add methods to remove components
 
+    public void removeSprite(IRenderComponent renderComponent, IScene scene, ShaderProgram shaderProgram) {
+
+    }
+
     // For render components that use the 2d point light shader. Note that lights added to one scene will affect objects
     // in all scenes
     public void addPointLight(IRenderComponent renderComponent, IScene scene) {
