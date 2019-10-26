@@ -88,6 +88,8 @@ class EngineLoop {
                 }
             }
         }
+
+        updateStates(moduleCSM.getModuleStates(INPUT));
     }
 
     private void update(double time) { // TODO: figure out how time works. Perhaps pass in an updateEvent data structure?
@@ -103,6 +105,8 @@ class EngineLoop {
                 threadPool.executeUpdateTasks(state, state.getComponents(), threadPool.getAvailableThreads());
             }
         }
+
+        updateStates(moduleCSM.getModuleStates(UPDATE));
     }
 
     private void render() {
@@ -141,6 +145,8 @@ class EngineLoop {
                 }
             }
         }
+
+        updateStates(moduleCSM.getModuleStates(RENDER));
     }
 
     private int calcAlloc(int set1, int set2, int totalThreads) {
@@ -158,6 +164,12 @@ class EngineLoop {
 
         int set1Threads = totalThreads / ((set2 / set1) + 1);
         return Math.min(Math.max(1, set1Threads), totalThreads - 1);
+    }
+
+    private void updateStates(IState[] states) {
+        for (IState state : states) {
+            threadPool.executeUpdateTasks(state, state.getComponents(), threadPool.getAvailableThreads());
+        }
     }
 
 }

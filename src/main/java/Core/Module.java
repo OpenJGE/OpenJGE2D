@@ -129,6 +129,27 @@ public class Module implements IModule {
     }
 
     /**
+     * Adds a custom, module-defined <code>IState</code> object to the <code>Core</code>'s internal update list. Note
+     * that the <code>IState</code> passed into the method must've already been registered with the <code>Core</code>.
+     *
+     * @param state The custom <code>IState</code> object to be added to the update list
+     */
+    public void addModuleState(IState state) {
+        moduleCSM.addModuleState(state);
+    }
+
+    /**
+     * Removes a custom, module-defined <code>IState</code> object from the <code>Core</code>'s internal update list.
+     * Note that the <code>IState</code> passed into the method must've already been registered and added to the
+     * <code>Core</code>.
+     *
+     * @param state The custom <code>IState</code> object to be removed from the update list
+     */
+    public void removeModuleState(IState state) {
+        moduleCSM.removeModuleState(state);
+    }
+
+    /**
      * Pushes an <code>IScene</code> object onto the top of the scene stack. Once this is done, all registered
      * <code>IState</code> objects held within the supplied scene will then recieve updates. Note that
      * <code>IScene</code> objects at the bottom of the scene stack are updated first.

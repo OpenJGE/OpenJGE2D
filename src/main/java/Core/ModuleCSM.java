@@ -20,11 +20,13 @@ class ModuleCSM {
     private Map<IState, Phase> statePhaseMap;
     private Map<Phase, IState[][]> phaseUpdateMap;
     private ArrayList<IScene> sceneStack;
+    private Map<Phase, IState[]> modulePhaseUpdateMap;
 
     ModuleCSM() {
         statePhaseMap = new HashMap<>();
         sceneStack = new ArrayList<>();
         phaseUpdateMap = new HashMap<>();
+        modulePhaseUpdateMap = new HashMap<>();
 
         IState[][] inputStates = new IState[0][0]; // Zero scenes, zero states
         phaseUpdateMap.put(INPUT, inputStates);
@@ -32,6 +34,12 @@ class ModuleCSM {
         phaseUpdateMap.put(UPDATE, updateStates);
         IState[][] renderStates = new IState[0][0];
         phaseUpdateMap.put(RENDER, renderStates);
+        IState[] mInputStates = new IState[0]; // Zero custom, module-defined states
+        modulePhaseUpdateMap.put(INPUT, mInputStates);
+        IState[] mUpdateStates = new IState[0];
+        modulePhaseUpdateMap.put(UPDATE, mUpdateStates);
+        IState[] mRenderStates = new IState[0];
+        modulePhaseUpdateMap.put(RENDER, mRenderStates);
     }
 
     /*
@@ -49,6 +57,41 @@ class ModuleCSM {
             throw new RuntimeException("Could not find state " + state + " in registry");
         }
         statePhaseMap.remove(state);
+    }
+
+    void addModuleState(IState state) {
+        Phase phase = statePhaseMap.get(state);
+        if (phase == null) {
+            throw new RuntimeException("Module-defined state '" + state + "' has not been registered with the Core");
+        }
+        IState[] phaseStates = modulePhaseUpdateMap.get(phase);
+        for (IState phaseState : phaseStates) {
+            if (phaseState == state) {
+                System.out.println("Module-defined state '" + state + "' has already been added");
+                return;
+            }
+        }
+        IState[] buffer = new IState[phaseStates.length + 1];
+        System.arraycopy(phaseStates, 0, buffer, 0, phaseStates.length);
+        buffer[buffer.length - 1] = state;
+        modulePhaseUpdateMap.put(phase, buffer);
+    }
+
+    void removeModuleState(IState state) {
+        Phase phase = statePhaseMap.get(state);
+        if (phase == null) {
+            throw new RuntimeException("Module-defined state '" + state + "' has not been registered with the Core");
+        }
+        IState[] phaseStates = modulePhaseUpdateMap.get(phase);
+        IState[] buffer = new IState[phaseStates.length - 1];
+        for (int i = 0; i < phaseStates.length; i++) {
+            IState phaseState = phaseStates[i];
+            if (phaseState == state) {
+                System.arraycopy(phaseStates, 0, buffer, 0, i);
+                System.arraycopy(phaseStates, i + 1, buffer, i, phaseStates.length - i);
+            }
+        }
+        modulePhaseUpdateMap.put(phase, buffer);
     }
 
     void pushScene(IScene scene) {
@@ -83,9 +126,12 @@ class ModuleCSM {
                 updateStatesBuffer[numUpdateStates] = sceneStates[i];
                 numUpdateStates++;
             }
-            else {
+            else if (phase == RENDER) {
                 renderStatesBuffer[numRenderStates] = sceneStates[i];
                 numRenderStates++;
+            }
+            else {
+                throw new RuntimeException("State in '" + scene.getName() + "' has not been registered with the Core");
             }
         }
         IState[] newInputStates = new IState[numInputStates];
@@ -141,6 +187,10 @@ class ModuleCSM {
      */
     IState[] getStates(int sceneIndex, Phase phase) {
         return phaseUpdateMap.get(phase)[sceneIndex];
+    }
+
+    IState[] getModuleStates(Phase phase) {
+        return modulePhaseUpdateMap.get(phase);
     }
 
 }
