@@ -2,11 +2,13 @@ package Graphics;
 
 public class RenderKey {
 
-    public static final int OPAQUE = 0;
-    public static final int TRANSPARENT = 1;
-    public static final int TRANSLUCENT = 2;
+    public static final int TRANSPARENT = 0;
+    public static final int TRANSLUCENT = 1;
+    public static final int OPAQUE = 2;
+
 
     private int key;
+    private int renderType;
     private final byte passOffset = 32;
     private final byte sceneOffset = 28;
     private final byte layerOffset = 24;
@@ -20,6 +22,7 @@ public class RenderKey {
         }
 
         key = 0;
+        this.renderType = renderType;
         if (renderType == 1 || renderType == 2) {
             // If the render component is transparent/translucent, we should prioritize sorting by depth first to
             // ensure proper ordering for blending operations
@@ -88,6 +91,9 @@ public class RenderKey {
     void setDepthValue(int depthValue) {
         if (depthValue > 4096 || depthValue < 0) {
             throw new RuntimeException("depthValue (x) outside bounds. 0<=x<=4096");
+        }
+        if (renderType == 2) {
+            depthValue = 4096 - depthValue;
         }
         int mask = depthValue << (depthOffset - 12);
         key = key | mask;
