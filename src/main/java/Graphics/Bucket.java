@@ -5,7 +5,7 @@ import EngineLibrary.IComponent;
 import java.util.Arrays;
 import java.util.Comparator;
 
-public class Bucket implements IComponent {
+class Bucket implements IComponent {
 
     private IRenderComponent[] components;
     private int tail = 0;

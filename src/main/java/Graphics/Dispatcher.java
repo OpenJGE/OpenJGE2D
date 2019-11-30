@@ -6,7 +6,7 @@ import EngineLibrary.IState;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class Dispatcher implements IState {
+class Dispatcher implements IState {
 
     private ArrayList<Bucket> buckets;
 
@@ -34,7 +34,7 @@ public class Dispatcher implements IState {
 
     @Override
     public void removeComponent(IComponent component) {
-        
+
     }
 
     @Override
