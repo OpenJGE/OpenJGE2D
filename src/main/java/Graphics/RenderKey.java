@@ -46,12 +46,22 @@ public class RenderKey {
         key = 0;
     }
 
+    int getRenderType() {
+        return renderType;
+    }
+
     void setPassValue(int passValue) {
         if (passValue > 16 || passValue < 0) {
             throw new RuntimeException("passValue (x) outside bounds. 0<=x<=16");
         }
         int mask = passValue << (passOffset - 4);
         key = key | mask;
+    }
+
+    int getPassValue() {
+        int get = 16;
+        int mask = get << (passOffset - 4);
+        return key & mask;
     }
 
     void clearPassValue() {
@@ -68,6 +78,12 @@ public class RenderKey {
         key = key | mask;
     }
 
+    int getSceneValue() {
+        int get = 16;
+        int mask = get << (sceneOffset - 4);
+        return key & mask;
+    }
+
     void clearSceneValue() {
         int clear = 16;
         int mask = ~(clear << (sceneOffset - 4));
@@ -80,6 +96,12 @@ public class RenderKey {
         }
         int mask = layerValue << (layerOffset - 2);
         key = key | mask;
+    }
+
+    int getLayerValue() {
+        int get = 4;
+        int mask = get << (layerOffset - 2);
+        return key & mask;
     }
 
     void clearLayerValue() {
@@ -99,6 +121,12 @@ public class RenderKey {
         key = key | mask;
     }
 
+    int getDepthValue() {
+        int get = 4096;
+        int mask = get << (depthOffset - 12);
+        return key & mask;
+    }
+
     void clearDepthValue() {
         int clear = 4096;
         int mask = ~(clear << (depthOffset - 12));
@@ -111,6 +139,12 @@ public class RenderKey {
         }
         int mask = shaderValue << (shaderOffset - 8);
         key = key | mask;
+    }
+
+    int getShaderValue() {
+        int get = 256;
+        int mask = get << (shaderOffset - 8);
+        return key & mask;
     }
 
     void clearShaderValue() {
