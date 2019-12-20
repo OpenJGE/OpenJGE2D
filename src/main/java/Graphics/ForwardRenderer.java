@@ -1,10 +1,12 @@
 package Graphics;
 
 import EngineLibrary.Command;
+import IO.FileIO;
 import OpenGL.Camera;
 import OpenGL.ShaderProgram;
 import OpenGL.Window;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 
@@ -14,18 +16,89 @@ class ForwardRenderer {
 
     private Window window;
     private Camera camera;
+    private Bucket renderBucket;
+    private Dispatcher dispatcher;
+    private ShaderProgram spriteShader;
+    private ShaderProgram pointLightShader;
+    private ArrayList<ShaderProgram> customShaders;
+    private int nPointLights;
+    private PointLightStruct[] pointLights;
 
-    private boolean initialized = false;
+    private boolean windowInit = false;
     private final float standardRatio = 16f/9f;
     private float virtualWidth = 160f; // Set this to whatever
 
-    ForwardRenderer(Window window, Camera camera) {
+    ForwardRenderer(Window window, Camera camera, int maxPointLights) {
         this.window = window;
         this.camera = camera;
+
+        renderBucket = new Bucket(10);
+        dispatcher = new Dispatcher(this);
+        dispatcher.addBucket(renderBucket);
+        pointLights = new PointLightStruct[maxPointLights];
+
+        init();
+    }
+
+    private void init() {
+        camera.setPosition(0f, 0f, 0.1f);
+
+        // Set up default shaders
+        // Set up default shaders
+        FileIO codeReader = new FileIO();
+        // Sprite shader
+        spriteShader = new ShaderProgram("Sprite Shader", "projectionMatrix", "viewMatrix", "modelMatrix");
+        String vsCode = codeReader.loadCodeFile("/Shaders/sprite.vs");
+        String fsCode = codeReader.loadCodeFile("/Shaders/sprite.fs");
+        spriteShader.createVertexShader(vsCode);
+        spriteShader.createFragmentShader(fsCode);
+        spriteShader.linkProgram();
+        spriteShader.bindProgram();
+        spriteShader.createUniform(spriteShader.getProjMatName());
+        spriteShader.createUniform(spriteShader.getViewMatName());
+        spriteShader.createUniform(spriteShader.getModelMatName());
+        spriteShader.createUniform("diffuseMap");
+        spriteShader.createUniform("normalMap");
+        spriteShader.createUniform("scene.ambient");
+        spriteShader.createUniform("scene.brightness");
+        spriteShader.createUniform("scene.nPointLights");
+        spriteShader.setUniform("diffuseMap", 0); // These are the default sampler locations that must be adhered to by all textures that use this shader
+        spriteShader.setUniform("normalMap", 1);
+        for (int i = 0; i < pointLights.length; i++) {
+            spriteShader.createUniform("pointLights[" + i + "].position");
+            spriteShader.createUniform("pointLights[" + i + "].ambient");
+            spriteShader.createUniform("pointLights[" + i + "].diffuse");
+            spriteShader.createUniform("pointLights[" + i + "].constant");
+            spriteShader.createUniform("pointLights[" + i + "].linear");
+            spriteShader.createUniform("pointLights[" + i + "].quadratic");
+        }
+        spriteShader.unbindProgram();
+        // Point light shader
+        pointLightShader = new ShaderProgram("Point Light Shader", "projectionMatrix", "viewMatrix", "modelMatrix");
+        vsCode = codeReader.loadCodeFile("/Shaders/point_light.vs");
+        fsCode = codeReader.loadCodeFile("/Shaders/point_light.fs");
+        pointLightShader.createVertexShader(vsCode);
+        pointLightShader.createFragmentShader(fsCode);
+        pointLightShader.linkProgram();
+        pointLightShader.bindProgram();
+        pointLightShader.createUniform(pointLightShader.getProjMatName());
+        pointLightShader.createUniform(pointLightShader.getViewMatName());
+        pointLightShader.createUniform(pointLightShader.getModelMatName());
+        pointLightShader.createUniform("diffuseMap");
+        pointLightShader.setUniform("diffuseMap", 0);
+        pointLightShader.unbindProgram();
+    }
+
+    Dispatcher getDispatcher() {
+        return dispatcher;
     }
 
     void generateStream(IRenderComponent[] renderComponents) {
-        init();
+        if (!windowInit) {
+            window.attachContext();
+            window.createCapabilities();
+            windowInit = true;
+        }
 
         // Get base render commands
         ArrayList<Command> commandStream = new ArrayList<>(renderComponents.length);
@@ -106,14 +179,6 @@ class ForwardRenderer {
         }
     }
 
-    private void init() {
-        if (!initialized) {
-            window.attachContext();
-            window.createCapabilities();
-            initialized = true;
-        }
-    }
-
     private float convert2DDepth(float yPos) {
         // Set z coordinate to be equal to y coordinate
         float virtualHeight = standardRatio * virtualWidth;
@@ -163,6 +228,26 @@ class ForwardRenderer {
         // Perform final rendering operations
         window.swapBuffers();
         glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    void cleanup() {
+        spriteShader.cleanup();
+        pointLightShader.cleanup();
+        for (ShaderProgram customShader : customShaders) {
+            customShader.cleanup();
+        }
+    }
+
+    static class PointLightStruct {
+        final IRenderComponent renderComponent;
+        Vector3f ambient;
+        Vector3f diffuse;
+        float linear;
+        float quadratic;
+
+        PointLightStruct(IRenderComponent renderComponent) {
+            this.renderComponent = renderComponent;
+        }
     }
 
 }

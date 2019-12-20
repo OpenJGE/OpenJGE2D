@@ -9,9 +9,11 @@ import java.util.Map;
 class Dispatcher implements IState {
 
     private ArrayList<Bucket> buckets;
+    private ForwardRenderer fRenderer;
 
-    public Dispatcher() {
+    public Dispatcher(ForwardRenderer fRenderer) {
         buckets = new ArrayList<>();
+        this.fRenderer = fRenderer;
     }
 
     @Override
@@ -52,9 +54,8 @@ class Dispatcher implements IState {
         // Dispatch each draw call
         for (Bucket bucket : buckets) {
             IRenderComponent[] renderComponents = bucket.getComponents();
-            for (IRenderComponent renderComponent : renderComponents) {
-                renderComponent.getOGLCmd().execute();
-            }
+            fRenderer.generateStream(renderComponents);
+            bucket.reset();
         }
     }
 

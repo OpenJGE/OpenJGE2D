@@ -2,14 +2,23 @@ package Graphics;
 
 import Engine.EngineStates;
 import EngineLibrary.IModule;
+import IO.FileIO;
 import OpenGL.Camera;
+import OpenGL.ShaderProgram;
 import OpenGL.Window;
+import org.joml.Vector3f;
+
+import java.util.ArrayList;
 
 /**
  * The <code>Graphics.Module</code> class encompasses and provides access to all 2D graphical functionality, including
  * window management, camera, default shader operation, and, of course, rendering. Out of the box, all
  * <code>IRenderComponent</code> objects are updated on a dedicated rendering thread, so it is imperative that any work
  * done by these objects is thread safe to ensure the application functions as expected.
+ * <p>
+ * When creating custom <code>Texture</code> objects, any texture that is to be used with the default shaders defined
+ * in this module must have a location (textureUnit) of "0" if it is a diffuse texture, and "1" if it is a normal
+ * texture.
  */
 public class Module implements IModule {
 
@@ -18,6 +27,13 @@ public class Module implements IModule {
     private Window window;
     private Camera camera;
     private ForwardRenderer fRenderer;
+    private Bucket bucket;
+    private Dispatcher dispatcher;
+    private ShaderProgram spriteShader;
+    private ShaderProgram pointLightShader;
+    private ArrayList<ShaderProgram> customShaders;
+    private int nPointLights;
+    private PointLightStruct[] pointLights;
 
     private boolean initialized;
     private boolean started;
@@ -66,16 +82,78 @@ public class Module implements IModule {
         camera = new Camera();
         camera.setPosition(0f, 0f, 0.1f);
         // Set up forward renderer
-        fRenderer = new ForwardRenderer(window, camera);
+        fRenderer = new ForwardRenderer(window, camera, engineStates.getMaxLights());
+        coreModule.registerState(fRenderer.getDispatcher(), Core.Module.Phase.RENDER, Core.Module.ThreadType.RENDER);
+        coreModule.addModuleState(fRenderer.getDispatcher());
+
+        // TODO: Register the module with the core
     }
 
     @Override
     public void start() {
+        if (started) {
+            throw new RuntimeException("The Graphics module has already been started");
+        }
+        else {
+            started = true;
+        }
+
+        window.detachContext();
+    }
+
+    public void setSceneLight() {
+
+    }
+
+    public void addShader() {
+
+    }
+
+    public void addPointLight() {
+
+    }
+
+    public void setPointLight() {
+
+    }
+
+    public void removePointLight() {
+
+    }
+
+    public void setCameraPos() {
+
+    }
+
+    public void setViewWidth() {
+
+    }
+
+    public RenderKey generateKey() {
 
     }
 
     @Override
     public void shutdown() {
+        coreModule.removeModuleState(dispatcher);
+        coreModule.unregisterState(dispatcher);
+        fRenderer.cleanup();
+        window.destroyWindow();
 
+        started = false;
+        initialized = false;
+        instantiated = false;
+    }
+
+    static class PointLightStruct {
+        final IRenderComponent renderComponent;
+        Vector3f ambient;
+        Vector3f diffuse;
+        float linear;
+        float quadratic;
+
+        PointLightStruct(IRenderComponent renderComponent) {
+            this.renderComponent = renderComponent;
+        }
     }
 }
