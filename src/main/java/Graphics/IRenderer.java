@@ -1,25 +1,22 @@
 package Graphics;
 
+import EngineLibrary.Command;
 import OpenGL.ShaderProgram;
 
-public interface IRenderer {
+interface IRenderer {
 
     Dispatcher getDispatcher();
 
     void setViewWidth(float width);
 
-    void setSceneLight(float r, float b, float g, float brightness);
+    void setAmbientLight(RenderState state, float r, float b, float g, float brightness);
 
-    void addShader(ShaderProgram shaderProgram);
+    void addShader(ShaderProgram shaderProgram, ShaderCommand shaderPrep);
 
-    void addPointLight(IRenderComponent renderComponent);
+    void addPointLight(IRenderComponent renderComponent); //TODO: add custom brightness
 
-    void setPointLight();
+    //TODO: implement void setPointLight();
 
     void removePointLight();
-
-    void addComponent(IRenderComponent renderComponent, ShaderProgram shaderProgram);
-
-    void removeComponent();
 
 }

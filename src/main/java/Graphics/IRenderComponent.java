@@ -15,6 +15,10 @@ public interface IRenderComponent extends IComponent {
 
     void addShader(ShaderProgram shaderProgram);
 
+    Module.RenderType getRenderType();
+
+    RenderState getRenderState();
+
     ShaderProgram getShaderProgram();
 
     RenderKey getRenderKey();

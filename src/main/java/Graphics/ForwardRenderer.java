@@ -7,21 +7,27 @@ import OpenGL.ShaderProgram;
 import OpenGL.Window;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
 
-class ForwardRenderer {
+class ForwardRenderer implements IRenderer {
 
     private Window window;
     private Camera camera;
+    private int maxPointLights;
     private Bucket renderBucket;
     private Dispatcher dispatcher;
     private ShaderProgram spriteShader;
     private ShaderProgram pointLightShader;
-    private ArrayList<ShaderProgram> customShaders;
-    private int nPointLights;
+    private ArrayList<ShaderProgram> customShaders; // Delete
+    private Map<ShaderProgram, ShaderCommand> shaderPrepMap;
+    private Map<RenderState, Vector4f> ambientLightMap;
+    private int nPointLights = 0;
     private PointLightStruct[] pointLights;
 
     private boolean windowInit = false;
@@ -31,19 +37,20 @@ class ForwardRenderer {
     ForwardRenderer(Window window, Camera camera, int maxPointLights) {
         this.window = window;
         this.camera = camera;
+        this.maxPointLights = maxPointLights;
 
         renderBucket = new Bucket(10);
         dispatcher = new Dispatcher(this);
         dispatcher.addBucket(renderBucket);
         pointLights = new PointLightStruct[maxPointLights];
+        customShaders = new ArrayList<>();
+        shaderPrepMap = new HashMap<>();
+        ambientLightMap = new HashMap<>();
 
         init();
     }
 
     private void init() {
-        camera.setPosition(0f, 0f, 0.1f);
-
-        // Set up default shaders
         // Set up default shaders
         FileIO codeReader = new FileIO();
         // Sprite shader
@@ -87,10 +94,79 @@ class ForwardRenderer {
         pointLightShader.createUniform("diffuseMap");
         pointLightShader.setUniform("diffuseMap", 0);
         pointLightShader.unbindProgram();
+
+        // Set up preparation command for sprite shader
+        ShaderCommand command = (state, renderComponents) -> {
+            Vector4f ambientLight = ambientLightMap.get(state);
+            Vector3f lightColour = new Vector3f(ambientLight.x, ambientLight.y, ambientLight.z);
+            spriteShader.setUniform("scene.ambient", lightColour);
+            spriteShader.setUniform("scene.brightness", ambientLight.w);
+            spriteShader.setUniform("scene.nPointLights", nPointLights);
+
+            for (int i = 0; i < nPointLights; i++) {
+                PointLightStruct pointLight = pointLights[i];
+                float x = pointLight.renderComponent.getXPos();
+                float y = pointLight.renderComponent.getYPos();
+                float z = convert2DDepth(y);
+                Vector3f position = new Vector3f(x, y, z);
+                spriteShader.setUniform("pointLights[" + i + "].position", position);
+                spriteShader.setUniform("pointLights[" + i + "].ambient", pointLight.ambient);
+                spriteShader.setUniform("pointLights[" + i + "].diffuse", pointLight.diffuse);
+                spriteShader.setUniform("pointLights[" + i + "].constant", 1.0f);
+                spriteShader.setUniform("pointLights[" + i + "].linear", pointLight.linear);
+                spriteShader.setUniform("pointLights[" + i + "].quadratic", pointLight.quadratic);
+            }
+        };
+        shaderPrepMap.put(spriteShader, command);
     }
 
-    Dispatcher getDispatcher() {
+    @Override
+    public Dispatcher getDispatcher() {
         return dispatcher;
+    }
+
+    @Override
+    public void setViewWidth(float width) {
+        virtualWidth = width;
+    }
+
+    @Override
+    public void setAmbientLight(RenderState state, float r, float b, float g, float brightness) {
+        float red = Math.max(0, Math.min(r, 1));
+        float green = Math.max(0, Math.min(g, 1));
+        float blue = Math.max(0, Math.min(b, 1));
+        float bright = Math.max(0, Math.min(brightness, 1));
+        Vector4f vec4 = new Vector4f(red, green, blue, bright);
+        ambientLightMap.put(state, vec4);
+    }
+
+    @Override
+    public void addShader(ShaderProgram shaderProgram, ShaderCommand shaderPrep) {
+        shaderPrepMap.put(shaderProgram, shaderPrep);
+    }
+
+    @Override
+    public void addPointLight(IRenderComponent renderComponent) {
+        if (nPointLights == maxPointLights) {
+            System.out.println("Cannot add new point light: maximum number reached"); //TODO: replace with logger
+            return;
+        }
+
+        // Increase number of point lights and add new point light to internal list. Keeping an internal list like this
+        // allows us to change point light attributes after it's been added, as well as to defer setting shader uniforms
+        // until the renderPrep method
+        nPointLights++;
+        PointLightStruct pointLight = new PointLightStruct(renderComponent);
+        pointLight.ambient = new Vector3f(1.0f, 1.0f, 1.0f);
+        pointLight.diffuse = new Vector3f(1.0f, 1.0f, 1.0f);
+        pointLight.linear = 0.007f;
+        pointLight.quadratic = 0.0002f;
+        pointLights[nPointLights - 1] = pointLight;
+    }
+
+    @Override
+    public void removePointLight() {
+        //TODO: implement
     }
 
     void generateStream(IRenderComponent[] renderComponents) {
@@ -141,6 +217,12 @@ class ForwardRenderer {
                     shaderProgram.bindProgram();
                     shaderProgram.setUniform(shaderProgram.getProjMatName(), camera.getProjectionMatrix());
                     shaderProgram.setUniform(shaderProgram.getViewMatName(), camera.getViewMatrix());
+
+                    // Run shader prep
+                    ShaderCommand shaderPrep = shaderPrepMap.get(shaderProgram);
+                    if (shaderPrep != null) {
+                        shaderPrep.shaderPrep(renderComponent.getRenderState(), renderComponents);
+                    }
                 };
 
                 commandStream.add(i + offset, command);

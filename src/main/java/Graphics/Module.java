@@ -10,6 +10,8 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 
+import static Graphics.RenderKey.*;
+
 /**
  * The <code>Graphics.Module</code> class encompasses and provides access to all 2D graphical functionality, including
  * window management, camera, default shader operation, and, of course, rendering. Out of the box, all
@@ -21,6 +23,12 @@ import java.util.ArrayList;
  * texture.
  */
 public class Module implements IModule {
+
+    public enum RenderType {
+        TRANSPARENT,
+        TRANSLUCENT,
+        OPAQUE
+    }
 
     private EngineStates engineStates;
     private Core.Module coreModule;
@@ -101,15 +109,15 @@ public class Module implements IModule {
         window.detachContext();
     }
 
-    public void setSceneLight() {
+    public void setAmbientLight(RenderState state, float r, float b, float g, float brightness) {
 
     }
 
-    public void addShader() {
+    public void addShader(ShaderProgram shaderProgram, ShaderCommand shaderCommand) {
 
     }
 
-    public void addPointLight() {
+    public void addPointLight(IRenderComponent renderComponent) {
 
     }
 
@@ -121,15 +129,35 @@ public class Module implements IModule {
 
     }
 
-    public void setCameraPos() {
+    public void setCameraPos(float x, float y, float z) {
 
     }
 
-    public void setViewWidth() {
+    public void setViewWidth(float width) {
 
     }
 
-    public RenderKey generateKey() {
+    public RenderKey generateKey(IRenderComponent renderComponent) {
+        RenderKey key;
+
+        switch (renderComponent.getRenderType()) {
+            case TRANSPARENT:
+                key = new RenderKey(TRANSPARENT);
+                break;
+            case TRANSLUCENT:
+                key = new RenderKey(TRANSLUCENT);
+                break;
+            case OPAQUE:
+                key = new RenderKey(OPAQUE);
+                break;
+            default:
+                throw new RuntimeException("Incorrect RenderType provided by IRenderComponent"); //TODO: add name
+        }
+
+        key.setPassValue(0);
+    }
+
+    public void drawModel(IRenderComponent renderComponent, RenderKey renderKey) {
 
     }
 
