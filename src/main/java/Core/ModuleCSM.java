@@ -175,6 +175,14 @@ class ModuleCSM {
         return sceneStack.size();
     }
 
+    int getSceneLocation(IScene scene) {
+        int i = sceneStack.lastIndexOf(scene);
+        if (i == -1) {
+            throw new RuntimeException("Scene '" + scene.getName() + "' has not been added to the scene stack");
+        }
+        return i;
+    }
+
     /*
      * Returns a collection of component updates for each state in the specified scene. Every update is packaged up
      * into a runnable and stored in an array representing its enclosing state. All "states" in the scene registered
