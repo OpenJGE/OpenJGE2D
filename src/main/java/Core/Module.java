@@ -178,6 +178,16 @@ public class Module implements IModule {
     }
 
     /**
+     * Returns the numerical position of the given <code>IScene</code> object in the scene stack.
+     *
+     * @param scene The <code>IScene</code> object currently held in the scene stack
+     * @return The numerical position of the given <code>IScene</code> object in the scene stack, starting at zero
+     */
+    public int getSceneLocation(IScene scene) {
+        return moduleCSM.getSceneLocation(scene);
+    }
+
+    /**
      * Removes all <code>IScene</code> objects from the scene stack, and is the equivalent to popping every scene from
      * the stack.
      */
