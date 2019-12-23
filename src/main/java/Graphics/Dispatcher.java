@@ -4,16 +4,15 @@ import EngineLibrary.IComponent;
 import EngineLibrary.IState;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 class Dispatcher implements IState {
 
     private ArrayList<Bucket> buckets;
-    private ForwardRenderer fRenderer;
+    private IRenderer renderer;
 
-    public Dispatcher(ForwardRenderer fRenderer) {
+    public Dispatcher(IRenderer renderer) {
         buckets = new ArrayList<>();
-        this.fRenderer = fRenderer;
+        this.renderer = renderer;
     }
 
     @Override
@@ -39,6 +38,10 @@ class Dispatcher implements IState {
 
     }
 
+    Bucket getBucket(int renderPass) {
+        return buckets.get(renderPass);
+    }
+
     @Override
     public IComponent[] getComponents() {
         return new IComponent[0];
@@ -54,7 +57,7 @@ class Dispatcher implements IState {
         // Dispatch each draw call
         for (Bucket bucket : buckets) {
             IRenderComponent[] renderComponents = bucket.getComponents();
-            fRenderer.generateStream(renderComponents);
+            renderer.generateStream(renderComponents);
             bucket.reset();
         }
     }

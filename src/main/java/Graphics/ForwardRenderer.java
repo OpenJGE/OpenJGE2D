@@ -24,7 +24,7 @@ class ForwardRenderer implements IRenderer {
     private Dispatcher dispatcher;
     private ShaderProgram spriteShader;
     private ShaderProgram pointLightShader;
-    private ArrayList<ShaderProgram> customShaders; // Delete
+    private ArrayList<ShaderProgram> shaders;
     private Map<ShaderProgram, ShaderCommand> shaderPrepMap;
     private Map<RenderState, Vector4f> ambientLightMap;
     private int nPointLights = 0;
@@ -43,9 +43,11 @@ class ForwardRenderer implements IRenderer {
         dispatcher = new Dispatcher(this);
         dispatcher.addBucket(renderBucket);
         pointLights = new PointLightStruct[maxPointLights];
-        customShaders = new ArrayList<>();
+        shaders = new ArrayList<>();
         shaderPrepMap = new HashMap<>();
         ambientLightMap = new HashMap<>();
+        shaders.add(spriteShader);
+        shaders.add(pointLightShader);
 
         init();
     }
@@ -131,7 +133,7 @@ class ForwardRenderer implements IRenderer {
     }
 
     @Override
-    public void setAmbientLight(RenderState state, float r, float b, float g, float brightness) {
+    public void setAmbientLight(RenderState state, float r, float g, float b, float brightness) {
         float red = Math.max(0, Math.min(r, 1));
         float green = Math.max(0, Math.min(g, 1));
         float blue = Math.max(0, Math.min(b, 1));
@@ -143,6 +145,16 @@ class ForwardRenderer implements IRenderer {
     @Override
     public void addShader(ShaderProgram shaderProgram, ShaderCommand shaderPrep) {
         shaderPrepMap.put(shaderProgram, shaderPrep);
+        if (!shaders.contains(shaderProgram))
+            shaders.add(shaderProgram);
+    }
+
+    @Override
+    public int getShaderLocation(ShaderProgram shaderProgram) {
+        int i = shaders.indexOf(shaderProgram);
+        if (i == -1)
+            throw new RuntimeException("ShaderProgram '" + shaderProgram.getName() + "' has not been added to the renderer");
+        return i;
     }
 
     @Override
@@ -169,7 +181,8 @@ class ForwardRenderer implements IRenderer {
         //TODO: implement
     }
 
-    void generateStream(IRenderComponent[] renderComponents) {
+    @Override
+    public void generateStream(IRenderComponent[] renderComponents) {
         if (!windowInit) {
             window.attachContext();
             window.createCapabilities();
@@ -261,7 +274,8 @@ class ForwardRenderer implements IRenderer {
         }
     }
 
-    private float convert2DDepth(float yPos) {
+    @Override
+    public float convert2DDepth(float yPos) {
         // Set z coordinate to be equal to y coordinate
         float virtualHeight = standardRatio * virtualWidth;
         return -(virtualHeight / 2 + yPos);
@@ -312,11 +326,10 @@ class ForwardRenderer implements IRenderer {
         glClear(GL_COLOR_BUFFER_BIT);
     }
 
-    void cleanup() {
-        spriteShader.cleanup();
-        pointLightShader.cleanup();
-        for (ShaderProgram customShader : customShaders) {
-            customShader.cleanup();
+    @Override
+    public void cleanup() {
+        for (ShaderProgram shader : shaders) {
+            shader.cleanup();
         }
     }
 

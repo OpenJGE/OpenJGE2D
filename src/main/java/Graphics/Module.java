@@ -2,7 +2,6 @@ package Graphics;
 
 import Engine.EngineStates;
 import EngineLibrary.IModule;
-import IO.FileIO;
 import OpenGL.Camera;
 import OpenGL.ShaderProgram;
 import OpenGL.Window;
@@ -34,7 +33,7 @@ public class Module implements IModule {
     private Core.Module coreModule;
     private Window window;
     private Camera camera;
-    private ForwardRenderer fRenderer;
+    private IRenderer renderer;
     private Bucket bucket;
     private Dispatcher dispatcher;
     private ShaderProgram spriteShader;
@@ -90,9 +89,9 @@ public class Module implements IModule {
         camera = new Camera();
         camera.setPosition(0f, 0f, 0.1f);
         // Set up forward renderer
-        fRenderer = new ForwardRenderer(window, camera, engineStates.getMaxLights());
-        coreModule.registerState(fRenderer.getDispatcher(), Core.Module.Phase.RENDER, Core.Module.ThreadType.RENDER);
-        coreModule.addModuleState(fRenderer.getDispatcher());
+        renderer = new ForwardRenderer(window, camera, engineStates.getMaxLights());
+        coreModule.registerState(renderer.getDispatcher(), Core.Module.Phase.RENDER, Core.Module.ThreadType.RENDER);
+        coreModule.addModuleState(renderer.getDispatcher());
 
         // TODO: Register the module with the core
     }
@@ -109,16 +108,16 @@ public class Module implements IModule {
         window.detachContext();
     }
 
-    public void setAmbientLight(RenderState state, float r, float b, float g, float brightness) {
-
+    public void setAmbientLight(RenderState state, float r, float g, float b, float brightness) {
+        renderer.setAmbientLight(state, r, g, b, brightness);
     }
 
     public void addShader(ShaderProgram shaderProgram, ShaderCommand shaderCommand) {
-
+        renderer.addShader(shaderProgram, shaderCommand);
     }
 
     public void addPointLight(IRenderComponent renderComponent) {
-
+        renderer.addPointLight(renderComponent);
     }
 
     public void setPointLight() {
@@ -130,11 +129,11 @@ public class Module implements IModule {
     }
 
     public void setCameraPos(float x, float y, float z) {
-
+        camera.setPosition(x, y, z);
     }
 
     public void setViewWidth(float width) {
-
+        renderer.setViewWidth(width);
     }
 
     public RenderKey generateKey(IRenderComponent renderComponent) {
@@ -154,18 +153,24 @@ public class Module implements IModule {
                 throw new RuntimeException("Incorrect RenderType provided by IRenderComponent"); //TODO: add name
         }
 
-        key.setPassValue(0);
+        key.setPassValue(0); //TODO: add option to select render pass
+        key.setSceneValue(coreModule.getSceneLocation(renderComponent.getRenderState().getParentScene()));
+        key.setLayerValue(renderComponent.getRenderState().getLayer(renderComponent));
+        key.setDepthValue((int) renderer.convert2DDepth(renderComponent.getYPos()));
+        key.setShaderValue(renderer.getShaderLocation(renderComponent.getShaderProgram()));
+
+        return key;
     }
 
     public void drawModel(IRenderComponent renderComponent, RenderKey renderKey) {
-
+        renderer.getDispatcher().getBucket(renderKey.getShaderValue()).addComponent(renderComponent);
     }
 
     @Override
     public void shutdown() {
         coreModule.removeModuleState(dispatcher);
         coreModule.unregisterState(dispatcher);
-        fRenderer.cleanup();
+        renderer.cleanup();
         window.destroyWindow();
 
         started = false;
