@@ -44,7 +44,7 @@ class ForwardRenderer implements IRenderer {
         this.camera = camera;
         this.maxPointLights = maxPointLights;
 
-        renderBucket = new Bucket(10);
+        renderBucket = new Bucket(10, "Render Bucket");
         dispatcher = new Dispatcher(this);
         dispatcher.addBucket(renderBucket);
         pointLights = new PointLightStruct[maxPointLights];

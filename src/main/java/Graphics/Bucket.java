@@ -11,6 +11,7 @@ class Bucket implements IComponent {
 
     private KeyComparator keyComparator;
 
+    private String name;
     private IRenderComponent[][] container;
     private IRenderComponent[] queueA;
     private IRenderComponent[] queueB;
@@ -23,7 +24,9 @@ class Bucket implements IComponent {
     private AtomicInteger writing;
     private IRenderComponent[] orderedComponents;
 
-    Bucket(int size) {
+    Bucket(int size, String name) {
+        this.name = name;
+
         keyComparator = new KeyComparator();
 
         container = new IRenderComponent[2][];
@@ -40,6 +43,11 @@ class Bucket implements IComponent {
         tailLoc = new AtomicInteger(0);
         wait = new AtomicBoolean(false);
         writing = new AtomicInteger(0);
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     void addComponent(IRenderComponent component) {
