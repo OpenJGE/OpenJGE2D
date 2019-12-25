@@ -3,6 +3,13 @@ package EngineLibrary;
 public interface IComponent {
 
     /**
+     * Returns the name of the <code>IComponent</code> object.
+     *
+     * @return The name of the <code>IComponent</code> object
+     */
+    String getName();
+
+    /**
      * Updates the component. Updates should utilize the functionality of the associated module.
      */
     void update();
