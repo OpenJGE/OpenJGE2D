@@ -23,7 +23,7 @@ public class RenderKey {
 
         key = 0;
         this.renderType = renderType;
-        if (renderType == 1 || renderType == 2) {
+        if (renderType == 0 || renderType == 1) {
             // If the render component is transparent/translucent, we should prioritize sorting by depth first to
             // ensure proper ordering for blending operations
             depthOffset = 20;
@@ -111,11 +111,11 @@ public class RenderKey {
     }
 
     void setDepthValue(int depthValue) {
-        if (depthValue > 4096 || depthValue < 0) {
+        if (depthValue > 2048 || depthValue < -2048) {
             throw new RuntimeException("depthValue (x) outside bounds. 0<=x<=4096");
         }
         if (renderType == 2) {
-            depthValue = 4096 - depthValue;
+            depthValue = 2048 - depthValue;
         }
         int mask = depthValue << (depthOffset - 12);
         key = key | mask;

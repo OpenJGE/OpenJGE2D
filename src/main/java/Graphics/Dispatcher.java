@@ -44,7 +44,7 @@ class Dispatcher implements IState {
 
     @Override
     public IComponent[] getComponents() {
-        return new IComponent[0];
+        return buckets.toArray(new IComponent[0]);
     }
 
     @Override
@@ -58,7 +58,6 @@ class Dispatcher implements IState {
         for (Bucket bucket : buckets) {
             IRenderComponent[] renderComponents = bucket.getComponents();
             renderer.generateStream(renderComponents);
-            bucket.reset();
         }
     }
 

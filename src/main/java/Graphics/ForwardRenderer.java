@@ -34,6 +34,11 @@ class ForwardRenderer implements IRenderer {
     private final float standardRatio = 16f/9f;
     private float virtualWidth = 160f; // Set this to whatever
 
+    private int currentScene = 16;
+    private int currentLayer = 16;
+    private int currentRenderType = 4;
+    private int currentShader = 256;
+
     ForwardRenderer(Window window, Camera camera, int maxPointLights) {
         this.window = window;
         this.camera = camera;
@@ -46,8 +51,6 @@ class ForwardRenderer implements IRenderer {
         shaders = new ArrayList<>();
         shaderPrepMap = new HashMap<>();
         ambientLightMap = new HashMap<>();
-        shaders.add(spriteShader);
-        shaders.add(pointLightShader);
 
         init();
     }
@@ -120,6 +123,8 @@ class ForwardRenderer implements IRenderer {
             }
         };
         shaderPrepMap.put(spriteShader, command);
+        shaders.add(spriteShader);
+        shaders.add(pointLightShader);
     }
 
     @Override
@@ -155,6 +160,16 @@ class ForwardRenderer implements IRenderer {
         if (i == -1)
             throw new RuntimeException("ShaderProgram '" + shaderProgram.getName() + "' has not been added to the renderer");
         return i;
+    }
+
+    @Override
+    public ShaderProgram getSpriteShader() {
+        return spriteShader;
+    }
+
+    @Override
+    public ShaderProgram getPointLightShader() {
+        return pointLightShader;
     }
 
     @Override
@@ -206,6 +221,7 @@ class ForwardRenderer implements IRenderer {
                         .scale(renderComponent.getScalar());
                 // Set model matrix
                 ShaderProgram shaderProgram = renderComponent.getShaderProgram();
+                shaderProgram.bindProgram();
                 shaderProgram.setUniform(shaderProgram.getModelMatName(), modelMatrix);
 
                 renderComponent.getOGLCmd().execute();
@@ -215,10 +231,7 @@ class ForwardRenderer implements IRenderer {
         }
 
         // Generate state change commands
-        int currentScene = 16;
-        int currentLayer = 16;
-        int currentRenderType = 4;
-        int currentShader = 256;
+
         // Insert state changes for each render component
         for (int i = 0; i < renderComponents.length; i++) {
             IRenderComponent renderComponent = renderComponents[i];
@@ -323,7 +336,7 @@ class ForwardRenderer implements IRenderer {
         }
         // Perform final rendering operations
         window.swapBuffers();
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     @Override

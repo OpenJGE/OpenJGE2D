@@ -34,13 +34,6 @@ public class Module implements IModule {
     private Window window;
     private Camera camera;
     private IRenderer renderer;
-    private Bucket bucket;
-    private Dispatcher dispatcher;
-    private ShaderProgram spriteShader;
-    private ShaderProgram pointLightShader;
-    private ArrayList<ShaderProgram> customShaders;
-    private int nPointLights;
-    private PointLightStruct[] pointLights;
 
     private boolean initialized;
     private boolean started;
@@ -116,8 +109,13 @@ public class Module implements IModule {
         renderer.addShader(shaderProgram, shaderCommand);
     }
 
+    public void createSprite(IRenderComponent renderComponent) {
+        renderComponent.addShader(renderer.getSpriteShader());
+    }
+
     public void addPointLight(IRenderComponent renderComponent) {
         renderer.addPointLight(renderComponent);
+        renderComponent.addShader(renderer.getPointLightShader());
     }
 
     public void setPointLight() {
@@ -163,30 +161,18 @@ public class Module implements IModule {
     }
 
     public void drawModel(IRenderComponent renderComponent, RenderKey renderKey) {
-        renderer.getDispatcher().getBucket(renderKey.getShaderValue()).addComponent(renderComponent);
+        renderer.getDispatcher().getBucket(renderKey.getPassValue()).addComponent(renderComponent);
     }
 
     @Override
     public void shutdown() {
-        coreModule.removeModuleState(dispatcher);
-        coreModule.unregisterState(dispatcher);
+        coreModule.removeModuleState(renderer.getDispatcher());
+        coreModule.unregisterState(renderer.getDispatcher());
         renderer.cleanup();
         window.destroyWindow();
 
         started = false;
         initialized = false;
         instantiated = false;
-    }
-
-    static class PointLightStruct {
-        final IRenderComponent renderComponent;
-        Vector3f ambient;
-        Vector3f diffuse;
-        float linear;
-        float quadratic;
-
-        PointLightStruct(IRenderComponent renderComponent) {
-            this.renderComponent = renderComponent;
-        }
     }
 }

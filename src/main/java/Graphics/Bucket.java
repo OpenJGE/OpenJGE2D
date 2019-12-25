@@ -4,46 +4,102 @@ import EngineLibrary.IComponent;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class Bucket implements IComponent {
 
-    private IRenderComponent[] components;
-    private int tail = 0;
     private KeyComparator keyComparator;
 
+    private IRenderComponent[][] container;
+    private IRenderComponent[] queueA;
+    private IRenderComponent[] queueB;
+    private AtomicInteger queueLoc;
+    private AtomicInteger[] tailContainer;
+    private AtomicInteger tailA;
+    private AtomicInteger tailB;
+    private AtomicInteger tailLoc;
+    private AtomicBoolean wait;
+    private AtomicInteger writing;
+    private IRenderComponent[] orderedComponents;
+
     Bucket(int size) {
-        components = new IRenderComponent[size];
         keyComparator = new KeyComparator();
+
+        container = new IRenderComponent[2][];
+        queueA = new IRenderComponent[size];
+        queueB = new IRenderComponent[size];
+        container[0] = queueA;
+        container[1] = queueB;
+        queueLoc = new AtomicInteger(0);
+        tailContainer = new AtomicInteger[2];
+        tailA = new AtomicInteger(0);
+        tailB = new AtomicInteger(0);
+        tailContainer[0] = tailA;
+        tailContainer[1] = tailB;
+        tailLoc = new AtomicInteger(0);
+        wait = new AtomicBoolean(false);
+        writing = new AtomicInteger(0);
     }
 
     void addComponent(IRenderComponent component) {
-        components[tail] = component;
-        tail++;
-        if (tail == components.length) {
-            IRenderComponent[] buffer = new IRenderComponent[tail];
-            System.arraycopy(components, 0, buffer, 0, tail);
-            components = new IRenderComponent[tail * 2];
-            System.arraycopy(buffer, 0, components, 0, tail);
+        // Ensure component is not already in the queue
+        IRenderComponent[] queue = container[queueLoc.get()];
+        AtomicInteger tail = tailContainer[tailLoc.get()];
+        int currentTail = tail.get();
+        for (int i = 0; i < currentTail; i++) {
+            if (queue[i] == component) {
+                return;
+            }
+        }
+        // Add component to queue
+        while (wait.get()) {}
+        writing.incrementAndGet();
+        int writeLoc = tail.incrementAndGet() - 1;
+        queue[writeLoc] = component;
+        writing.decrementAndGet();
+        // Resize queue if necessary
+        if (writeLoc == queue.length - 1) {
+            wait.getAndSet(true);
+            while (writing.get() > 0) {}
+            int length = queue.length;
+            IRenderComponent[] buffer = new IRenderComponent[length];
+            System.arraycopy(queue, 0, buffer, 0, length);
+            queue = new IRenderComponent[length * 2];
+            System.arraycopy(buffer, 0, queue, 0, length);
+            container[queueLoc.get()] = queue;
+            wait.getAndSet(false);
+        }
+        else {
+            wait.getAndSet(true);
+            while (writing.get() > 0) {}
+            container[queueLoc.get()] = queue;
+            wait.getAndSet(false);
         }
     }
 
-    void reset() {
-        tail = 0;
-    }
-
     IRenderComponent[] getComponents() {
-        IRenderComponent[] buffer = new IRenderComponent[tail];
-        System.arraycopy(components, 0, buffer, 0, tail);
-        return buffer;
+        return orderedComponents;
     }
 
     @Override
     public void update() {
-        IRenderComponent[] array = new IRenderComponent[tail];
-        System.arraycopy(components, 0, array, 0, tail);
-        // Sort
-        Arrays.sort(array, keyComparator);
-        components = array;
+        IRenderComponent[] queue = container[queueLoc.get()];
+        AtomicInteger tail = tailContainer[tailLoc.get()];
+        queueLoc.getAndSet(~queueLoc.get() & 1);
+        tailLoc.getAndSet(~tailLoc.get() & 1);
+        while (wait.get()) {}
+        int length = tail.get();
+        if (length > 0) {
+            IRenderComponent[] array = new IRenderComponent[length];
+            System.arraycopy(queue, 0, array, 0, length);
+            if (length != 1) {
+                Arrays.sort(array, keyComparator);
+            }
+            queue = array;
+            orderedComponents = queue;
+            tail.getAndSet(0);
+        }
     }
 
     @Override

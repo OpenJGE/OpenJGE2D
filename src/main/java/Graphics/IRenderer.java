@@ -16,6 +16,10 @@ interface IRenderer {
 
     int getShaderLocation(ShaderProgram shaderProgram);
 
+    ShaderProgram getSpriteShader();
+
+    ShaderProgram getPointLightShader();
+
     void addPointLight(IRenderComponent renderComponent); //TODO: add custom brightness
 
     //TODO: implement void setPointLight();

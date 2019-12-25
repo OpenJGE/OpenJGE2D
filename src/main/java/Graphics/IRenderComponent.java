@@ -9,7 +9,7 @@ import OpenGL.Texture;
 
 public interface IRenderComponent extends IComponent {
 
-    void addTexture(Texture texture);
+    void addTextures(Texture[] textures);
 
     void addMesh(Mesh mesh);
 
