@@ -20,11 +20,11 @@ interface IRenderer {
 
     ShaderProgram getPointLightShader();
 
-    void addPointLight(IRenderComponent renderComponent); //TODO: add custom brightness
+    void addPointLight(Module.PointLightStruct pointLight);
 
-    //TODO: implement void setPointLight();
+    void setPointLight(Module.PointLightStruct pointLight);
 
-    void removePointLight();
+    void removePointLight(IRenderComponent renderComponent);
 
     void generateStream(IRenderComponent[] renderComponents);
 

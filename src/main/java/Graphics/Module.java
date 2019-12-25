@@ -29,6 +29,12 @@ public class Module implements IModule {
         OPAQUE
     }
 
+    public enum Brightness {
+        LOW,
+        MEDIUM,
+        HIGH
+    }
+
     private EngineStates engineStates;
     private Core.Module coreModule;
     private Window window;
@@ -113,17 +119,51 @@ public class Module implements IModule {
         renderComponent.addShader(renderer.getSpriteShader());
     }
 
-    public void addPointLight(IRenderComponent renderComponent) {
-        renderer.addPointLight(renderComponent);
+    public void addPointLight(IRenderComponent renderComponent, float r, float g, float b, Brightness brightness) {
+        PointLightStruct pointLight = new PointLightStruct(renderComponent);
+        pointLight.ambient = new Vector3f(r, g, b);
+        pointLight.diffuse = new Vector3f(r, g, b);
+        switch (brightness) {
+            case LOW:
+                pointLight.linear = 0.022f;
+                pointLight.quadratic = 0.0019f;
+                break;
+            case MEDIUM:
+                pointLight.linear = 0.007f;
+                pointLight.quadratic = 0.0002f;
+                break;
+            case HIGH:
+                pointLight.linear = 0.0014f;
+                pointLight.quadratic = 0.000007f;
+                break;
+        }
+        renderer.addPointLight(pointLight);
         renderComponent.addShader(renderer.getPointLightShader());
     }
 
-    public void setPointLight() {
-
+    public void setPointLight(IRenderComponent renderComponent, float r, float g, float b, Brightness brightness) {
+        PointLightStruct pointLight = new PointLightStruct(renderComponent);
+        pointLight.ambient = new Vector3f(r, g, b);
+        pointLight.diffuse = new Vector3f(r, g, b);
+        switch (brightness) {
+            case LOW:
+                pointLight.linear = 0.022f;
+                pointLight.quadratic = 0.0019f;
+                break;
+            case MEDIUM:
+                pointLight.linear = 0.007f;
+                pointLight.quadratic = 0.0002f;
+                break;
+            case HIGH:
+                pointLight.linear = 0.0014f;
+                pointLight.quadratic = 0.000007f;
+                break;
+        }
+        renderer.setPointLight(pointLight);
     }
 
-    public void removePointLight() {
-
+    public void removePointLight(IRenderComponent renderComponent) {
+        renderer.removePointLight(renderComponent);
     }
 
     public void setCameraPos(float x, float y, float z) {
@@ -148,7 +188,7 @@ public class Module implements IModule {
                 key = new RenderKey(OPAQUE);
                 break;
             default:
-                throw new RuntimeException("Incorrect RenderType provided by IRenderComponent"); //TODO: add name
+                throw new RuntimeException("Incorrect RenderType provided by IRenderComponent '" + renderComponent.getName() + "'");
         }
 
         key.setPassValue(0); //TODO: add option to select render pass
@@ -174,5 +214,17 @@ public class Module implements IModule {
         started = false;
         initialized = false;
         instantiated = false;
+    }
+
+    static class PointLightStruct {
+        final IRenderComponent renderComponent;
+        Vector3f ambient;
+        Vector3f diffuse;
+        float linear;
+        float quadratic;
+
+        PointLightStruct(IRenderComponent renderComponent) {
+            this.renderComponent = renderComponent;
+        }
     }
 }

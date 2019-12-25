@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static Graphics.Module.*;
 import static org.lwjgl.opengl.GL11.*;
 
 class ForwardRenderer implements IRenderer {
@@ -173,7 +174,7 @@ class ForwardRenderer implements IRenderer {
     }
 
     @Override
-    public void addPointLight(IRenderComponent renderComponent) {
+    public void addPointLight(PointLightStruct pointLight) {
         if (nPointLights == maxPointLights) {
             System.out.println("Cannot add new point light: maximum number reached"); //TODO: replace with logger
             return;
@@ -183,17 +184,36 @@ class ForwardRenderer implements IRenderer {
         // allows us to change point light attributes after it's been added, as well as to defer setting shader uniforms
         // until the renderPrep method
         nPointLights++;
-        PointLightStruct pointLight = new PointLightStruct(renderComponent);
-        pointLight.ambient = new Vector3f(1.0f, 1.0f, 1.0f);
-        pointLight.diffuse = new Vector3f(1.0f, 1.0f, 1.0f);
-        pointLight.linear = 0.007f;
-        pointLight.quadratic = 0.0002f;
         pointLights[nPointLights - 1] = pointLight;
     }
 
     @Override
-    public void removePointLight() {
-        //TODO: implement
+    public void setPointLight(PointLightStruct pointLight) {
+        IRenderComponent renderComponent = pointLight.renderComponent;
+        for (int i = 0; i < pointLights.length; i++) {
+            if (renderComponent == pointLights[i].renderComponent) {
+                pointLights[i] = pointLight;
+                return;
+            }
+        }
+
+        System.out.println("Could not locate IRenderComponent '" + renderComponent.getName() + "' in point lights"); //TODO: replace with logger
+    }
+
+    @Override
+    public void removePointLight(IRenderComponent renderComponent) {
+        for (int i = 0; i < pointLights.length; i++) {
+            if (pointLights[i].renderComponent == renderComponent) {
+                nPointLights--;
+                PointLightStruct[] buffer = new PointLightStruct[nPointLights];
+                System.arraycopy(pointLights, 0, buffer, 0, i);
+                System.arraycopy(pointLights, i + 1, buffer, i, nPointLights - i);
+                pointLights = buffer;
+                return;
+            }
+        }
+
+        System.out.println("Could not locate IRenderComponent '" + renderComponent.getName() + "' in point lights"); //TODO: replace with logger
     }
 
     @Override
@@ -345,17 +365,4 @@ class ForwardRenderer implements IRenderer {
             shader.cleanup();
         }
     }
-
-    static class PointLightStruct {
-        final IRenderComponent renderComponent;
-        Vector3f ambient;
-        Vector3f diffuse;
-        float linear;
-        float quadratic;
-
-        PointLightStruct(IRenderComponent renderComponent) {
-            this.renderComponent = renderComponent;
-        }
-    }
-
 }
