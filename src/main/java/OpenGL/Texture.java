@@ -117,6 +117,13 @@ public class Texture {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    public int getTextureId() {
+        return textureId;
+    }
+
+    public int getTextureUnit() {
+        return textureUnit;
+    }
 
     /**
      * Returns the width of the generated texture object.

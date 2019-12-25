@@ -20,7 +20,7 @@ public class OGLCommands {
      * @param data The <code>CommandData</code> object. Must contain <code>int[] textureId</code>,
      *             <code>int[] textureUnit</code>, <code>int vaoID</code>, and <code>int vertexCount</code>
      */
-    public void glDrawElements(CommandData data) {
+    public static void glDrawElements(CommandData data) {
         // Bind VAO
         glBindVertexArray(data.vaoId);
         // We assume that there are EBOs at the first and second index of the VAO. This is in conjunction with the
@@ -28,16 +28,16 @@ public class OGLCommands {
         glEnableVertexAttribArray(0);
         glEnableVertexAttribArray(1);
         // Bind texture(s)
-        for (int i = 0; i < data.textureId.length; i++) {
-            int textureId = data.textureId[i];
-            int textureUnit = data.textureUnit[i];
+        for (int i = 0; i < data.textureIDs.length; i++) {
+            int textureId = data.textureIDs[i];
+            int textureUnit = data.textureUnits[i];
             glActiveTexture(GL_TEXTURE0 + textureUnit);
             glBindTexture(GL_TEXTURE_2D, textureId);
         }
         GL11.glDrawElements(GL_TRIANGLES, data.vertexCount, GL_UNSIGNED_INT, 0);
         // Unbind texture(s)
-        for (int i = 0; i < data.textureId.length; i++) {
-            glActiveTexture(GL_TEXTURE0 + data.textureUnit[i]);
+        for (int i = 0; i < data.textureIDs.length; i++) {
+            glActiveTexture(GL_TEXTURE0 + data.textureUnits[i]);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
         // Unbind VAO
@@ -55,12 +55,12 @@ public class OGLCommands {
          * Collection of texture IDs, with each index representing a different texture. Must correspond with
          * textureUnit array.
          */
-        public int[] textureId;
+        public int[] textureIDs;
         /**
          * Collection of texture units, with each index representing a different texture unit. Must correspond with
          * textureId array.
          */
-        public int[] textureUnit;
+        public int[] textureUnits;
         /**
          * The VAO ID of the mesh being rendered.
          */

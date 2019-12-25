@@ -1,7 +1,5 @@
 package DataStructs;
 
-import Graphics.SceneGraph;
-
 import java.util.ArrayList;
 
 /**
