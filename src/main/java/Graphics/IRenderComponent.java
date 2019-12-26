@@ -25,6 +25,4 @@ public interface IRenderComponent extends IComponent {
 
     Command getOGLCmd();
 
-    OGLCommands.CommandData getCmdData();
-
 }
