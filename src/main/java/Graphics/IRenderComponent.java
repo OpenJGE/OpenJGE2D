@@ -2,10 +2,7 @@ package Graphics;
 
 import EngineLibrary.Command;
 import EngineLibrary.IComponent;
-import OpenGL.Mesh;
-import OpenGL.OGLCommands;
-import OpenGL.ShaderProgram;
-import OpenGL.Texture;
+import OpenGL.*;
 
 public interface IRenderComponent extends IComponent {
 

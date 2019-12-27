@@ -3,13 +3,14 @@ package Graphics;
 import Engine.EngineStates;
 import EngineLibrary.IModule;
 import OpenGL.Camera;
+import OpenGL.RenderKey;
 import OpenGL.ShaderProgram;
 import OpenGL.Window;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 
-import static Graphics.RenderKey.*;
+import static OpenGL.RenderKey.*;
 
 /**
  * The <code>Graphics.Module</code> class encompasses and provides access to all 2D graphical functionality, including
