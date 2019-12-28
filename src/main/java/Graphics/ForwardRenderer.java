@@ -34,7 +34,7 @@ class ForwardRenderer implements IRenderer {
 
     private boolean windowInit = false;
     private final float standardRatio = 16f/9f;
-    private float virtualWidth = 160f; // Set this to whatever
+    private float virtualWidth = 240f; // Set this to whatever
 
     private int currentScene = 16;
     private int currentLayer = 16;
@@ -337,11 +337,11 @@ class ForwardRenderer implements IRenderer {
                 // vertically (think what would happen to the horizontal resolution if this block of code was
                 // switched with the block in the "tall-screen" clause, and the user were to shrink the window's
                 // resolution vertically)
-                virtualHeight = (float) height/width * virtualWidth;
+                virtualHeight = (float) height/width * virtualWidth; // virtualWidth remains constant for any widescreen
             }
             // If tall-screen
             else if (windowRatio < standardRatio) {
-                virtualHeight = standardRatio * virtualWidth;
+                virtualHeight = virtualWidth / standardRatio; // virtualHeight remains constant for any tall-screen
                 virtualWidth = windowRatio * virtualHeight;
             }
             else {

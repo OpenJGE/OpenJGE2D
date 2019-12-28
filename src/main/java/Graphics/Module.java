@@ -39,9 +39,11 @@ public class Module implements IModule {
      * used to specify the brightness of point lights added to a scene.
      */
     public enum Brightness {
+        VERY_LOW,
         LOW,
         MEDIUM,
-        HIGH
+        HIGH,
+        VERY_HIGH
     }
 
     private EngineStates engineStates;
@@ -173,17 +175,25 @@ public class Module implements IModule {
         pointLight.ambient = new Vector3f(r, g, b);
         pointLight.diffuse = new Vector3f(r, g, b);
         switch (brightness) {
+            case VERY_LOW:
+                pointLight.linear = 0.045f;
+                pointLight.quadratic = 0.0075f;
+                break;
             case LOW:
-                pointLight.linear = 0.022f;
-                pointLight.quadratic = 0.0019f;
+                pointLight.linear = 0.008f;
+                pointLight.quadratic = 0.001f;
                 break;
             case MEDIUM:
-                pointLight.linear = 0.007f;
-                pointLight.quadratic = 0.0002f;
+                pointLight.linear = 0.0028f;
+                pointLight.quadratic = 0.00004f;
                 break;
             case HIGH:
-                pointLight.linear = 0.0014f;
-                pointLight.quadratic = 0.000007f;
+                pointLight.linear = 0.001f;
+                pointLight.quadratic = 0.000013f;
+                break;
+            case VERY_HIGH:
+                pointLight.linear = 0.000091f;
+                pointLight.quadratic = 0.00000291f;
                 break;
         }
         renderer.addPointLight(pointLight);
